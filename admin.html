@@ -312,6 +312,8 @@
 </div>
 
 <script>
+if (!window.__adminScriptLoaded) {
+window.__adminScriptLoaded = true;
 /* ====== ISI DENGAN DATA SUPABASE ANDA (sama seperti di index.html) ====== */
 const SUPABASE_URL = "https://ttjyeyisquvamzhdzuke.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fEb55e3v6NZdx-TPkgoA_Q_2d_ixyUB";
@@ -601,6 +603,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
 });
 
 checkSession();
+} // end __adminScriptLoaded guard
 </script>
 </body>
 </html>
