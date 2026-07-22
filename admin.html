@@ -354,15 +354,26 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  try {
+    if (SUPABASE_URL.includes('YOUR-PROJECT') || SUPABASE_ANON_KEY.includes('YOUR-ANON')) {
+      throw new Error('SUPABASE_URL / SUPABASE_ANON_KEY di dalam file ini belum diganti dengan punya Anda.');
+    }
 
-  btn.disabled = false; btn.textContent = 'Masuk';
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-  if (error){
-    msg.textContent = 'Email atau password salah.';
-    return;
+    if (error){
+      msg.textContent = error.message === 'Invalid login credentials'
+        ? 'Email atau password salah.'
+        : 'Gagal login: ' + error.message;
+      btn.disabled = false; btn.textContent = 'Masuk';
+      return;
+    }
+    showDashboard(data.user);
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Tidak bisa terhubung ke database: ' + err.message;
+    btn.disabled = false; btn.textContent = 'Masuk';
   }
-  showDashboard(data.user);
 });
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
