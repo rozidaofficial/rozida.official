@@ -428,6 +428,7 @@
         </div>
         <div class="cal-grid" id="calGrid"></div>
       </div>
+      <div class="calendar-list" id="agendaList"><p class="empty-state">Memuat...</p></div>
     </div>
   </div>
 </section>
@@ -849,6 +850,8 @@ window.addEventListener('storage', (event) => {
 let calDate = new Date();
 let agendaDates = new Set();
 let agendaItems = [];
+let allAgenda = [];
+let selectedAgendaDate = null;
 
 async function loadAgenda(){
   try {
@@ -861,9 +864,13 @@ async function loadAgenda(){
     const ag = agData || [];
     const ord = (ordData || []).filter(o => o.event_date && o.status !== 'Dibatalkan');
     // merge items: agenda entries + orders with event_date
-    agendaItems = ag.concat(ord.map(o => ({ id: o.id, event_date: o.event_date, title: o.service_type || '', note: o.customer_name || '' })));
+    // for privacy, do not include customer_name in public listing; use notes/address/package_detail as note
+    const ordEvents = ord.map(o => ({ id: `order-${o.id}`, event_date: o.event_date, title: o.service_type || 'Pesanan', note: o.notes || o.address || o.package_detail || '' }));
+    agendaItems = ag.concat(ordEvents.map(e => ({ id: e.id, event_date: e.event_date, title: e.title, note: e.note })));
+    allAgenda = ag.concat(ordEvents);
     agendaDates = new Set(agendaItems.map(a => a.event_date));
     renderCalendar();
+    renderAgendaList();
   } catch (err){
     console.error(err);
   }
@@ -891,9 +898,16 @@ function renderCalendar(){
     const classes = ['day'];
     if (agendaDates.has(dateStr)) classes.push('has-agenda');
     if (dateStr === todayStr) classes.push('today');
-    html += `<div class="${classes.join(' ')}">${d}</div>`;
+    html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${d}</div>`;
   }
   grid.innerHTML = html;
+  // attach click handlers to show agenda list for a date
+  grid.querySelectorAll('.day[data-date]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      selectedAgendaDate = cell.getAttribute('data-date');
+      renderAgendaList();
+    });
+  });
 }
 
 document.getElementById('calPrev').addEventListener('click', () => {
@@ -904,7 +918,58 @@ document.getElementById('calNext').addEventListener('click', () => {
   calDate.setMonth(calDate.getMonth() + 1);
   renderCalendar();
 });
+// refresh agenda list when month changes
+document.getElementById('calPrev').addEventListener('click', () => renderAgendaList());
+document.getElementById('calNext').addEventListener('click', () => renderAgendaList());
 loadAgenda();
+
+function formatDateOnly(iso){
+  if (!iso) return '-';
+  try { return new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }); } catch(e){ return iso; }
+}
+
+function renderAgendaList(){
+  const list = document.getElementById('agendaList');
+  if (!list) return;
+  const monthKey = `${calDate.getFullYear()}-${String(calDate.getMonth() + 1).padStart(2, '0')}`;
+  const filtered = (allAgenda || []).filter(item => (item.event_date || '').startsWith(monthKey));
+  const selectedItems = selectedAgendaDate ? filtered.filter(item => item.event_date === selectedAgendaDate) : [];
+  const selectedLabel = selectedAgendaDate ? formatDateOnly(selectedAgendaDate) : 'Pilih tanggal';
+
+  if (!filtered.length){
+    list.innerHTML = '<p class="empty-state">Belum ada agenda pada bulan ini.</p>';
+    return;
+  }
+
+  const selectedMarkup = selectedItems.length ? selectedItems.map(a => `
+    <div class="calendar-item">
+      <div>
+        <div class="title">${escapeHtmlPub(a.title)}</div>
+        <div class="meta">${formatDateOnly(a.event_date)}${a.note ? ` · ${escapeHtmlPub(a.note)}` : ''}</div>
+      </div>
+    </div>
+  `).join('') : '<p class="empty-state" style="padding:16px 0;">Tidak ada agenda pada tanggal ini.</p>';
+
+  list.innerHTML = `
+    <div class="calendar-summary">
+      <div class="title">Agenda ${selectedLabel}</div>
+      <div class="meta">${filtered.length} agenda tersimpan di bulan ${calDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</div>
+    </div>
+    ${selectedMarkup}
+    <div class="calendar-summary" style="margin-top:10px;">
+      <div class="title">Semua agenda bulan ini</div>
+      <div class="meta">Klik tanggal di kalender untuk melihat rincian per hari</div>
+    </div>
+    ${filtered.map(a => `
+      <div class="calendar-item">
+        <div>
+          <div class="title">${escapeHtmlPub(a.title)}</div>
+          <div class="meta">${formatDateOnly(a.event_date)}${a.note ? ` · ${escapeHtmlPub(a.note)}` : ''}</div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+}
 
 /* ================= TESTIMONI ================= */
 async function loadTestimonials(){
