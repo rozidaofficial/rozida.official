@@ -980,6 +980,10 @@ function getSettingsSyncErrorMessage(err) {
   if (message.includes('relation "settings" does not exist')) {
     return 'Gagal menyimpan pengaturan ke Supabase: tabel settings tidak ditemukan. Jalankan `supabase-setup-final.sql`.';
   }
+  if (message.includes('record "new" has no field "updated_at"')
+      || message.includes('record "new" has no field "created_at"')) {
+    return 'Gagal menyimpan pengaturan ke Supabase: tabel settings perlu kolom timestamp. Jalankan `supabase-setup-final.sql`.';
+  }
   if (message.includes('column') && message.includes('does not exist')) {
     return 'Gagal menyimpan pengaturan ke Supabase: kolom pada tabel settings tidak ditemukan. Jalankan `supabase-setup-final.sql`.';
   }
