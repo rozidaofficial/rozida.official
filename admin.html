@@ -249,6 +249,7 @@
       <button class="tab-btn" data-tab="tabGallery">Galeri</button>
       <button class="tab-btn" data-tab="tabInvoice">Invoice</button>
       <button class="tab-btn" data-tab="tabKeuangan">Keuangan</button>
+      <button class="tab-btn" data-tab="tabPengaturan">Pengaturan</button>
     </div>
 
     <!-- ===== TAB PESANAN ===== -->
@@ -472,6 +473,92 @@
         <div id="financeList"><p class="empty-state">Memuat...</p></div>
       </div>
     </div>
+
+    <!-- ===== TAB PENGATURAN ===== -->
+    <div class="tab-panel" id="tabPengaturan">
+      <div class="panel-card">
+        <h3>Pengaturan</h3>
+        <p class="meta">Atur nomor WhatsApp admin, tautan sosial, dan metode pembayaran yang ditampilkan di invoice pelanggan.</p>
+
+        <div class="field">
+          <label>Nomor WhatsApp Admin</label>
+          <input type="text" id="settingsWaNumber" placeholder="Contoh: 0882006550939 atau 62882006550939">
+        </div>
+        <p style="font-size:.78rem;color:var(--ink-soft);margin-top:-8px;margin-bottom:16px;">
+          Boleh diawali 08 atau 62, sistem akan menyesuaikan otomatis.
+        </p>
+
+        <div class="field">
+          <label>Instagram (URL lengkap)</label>
+          <input type="text" id="settingsInstagram" placeholder="https://instagram.com/rozida.official">
+        </div>
+        <div class="field">
+          <label>TikTok (URL lengkap)</label>
+          <input type="text" id="settingsTiktok" placeholder="https://tiktok.com/@rozida.official">
+        </div>
+        <div class="field">
+          <label>Facebook (URL lengkap)</label>
+          <input type="text" id="settingsFacebook" placeholder="https://facebook.com/rozida.official">
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
+        <h3 style="font-size:1.02rem;margin-bottom:8px;">Metode Pembayaran</h3>
+        <p class="meta">Pilih metode yang ingin ditampilkan di invoice pelanggan.</p>
+
+        <label class="toggle-pill"><input type="checkbox" id="paymentQrisEnabled"> Aktifkan QRIS</label>
+        <div class="field" style="margin-top:8px;">
+          <label>Gambar QRIS (opsional, untuk ditampilkan/upload ulang)</label>
+          <input type="file" id="paymentQrisFile" accept="image/*">
+          <div id="paymentQrisPreviewWrap" style="margin-top:8px;display:none;">
+            <img id="paymentQrisPreview" src="" alt="QRIS" style="max-width:160px;border-radius:8px;border:1px solid #eee;">
+          </div>
+        </div>
+
+        <label class="toggle-pill" style="margin-top:14px;"><input type="checkbox" id="paymentBankEnabled"> Aktifkan Transfer Bank</label>
+        <div class="field" style="margin-top:8px;">
+          <label>Nama Bank</label>
+          <input type="text" id="paymentBankName" placeholder="Contoh: BCA">
+        </div>
+        <div class="field">
+          <label>Nomor Rekening</label>
+          <input type="text" id="paymentBankNumber" placeholder="Contoh: 1234567890">
+        </div>
+        <div class="field">
+          <label>Atas Nama</label>
+          <input type="text" id="paymentBankHolder" placeholder="Nama pemilik rekening">
+        </div>
+
+        <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
+        <div class="modal-actions" style="justify-content:flex-end;">
+          <button class="btn btn-primary" id="saveSettingsBtn">Simpan Pengaturan</button>
+        </div>
+
+        <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
+        <h3 style="font-size:1.02rem;margin-bottom:8px;">Akun Admin</h3>
+        <p class="meta">Ubah email atau kata sandi login admin.</p>
+
+        <div class="field">
+          <label>Email Baru</label>
+          <input type="email" id="accountNewEmail" placeholder="email@baru.com">
+        </div>
+        <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
+          <button class="btn btn-outline" id="changeEmailBtn">Ubah Email</button>
+        </div>
+
+        <div class="field" style="margin-top:14px;">
+          <label>Kata Sandi Baru</label>
+          <input type="password" id="accountNewPassword" placeholder="Minimal 6 karakter">
+        </div>
+        <div class="field">
+          <label>Ulangi Kata Sandi Baru</label>
+          <input type="password" id="accountNewPasswordConfirm" placeholder="Ulangi kata sandi baru">
+        </div>
+        <div id="accountMsg" style="font-size:.82rem;margin-bottom:6px;min-height:18px;"></div>
+        <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
+          <button class="btn btn-outline" id="changePasswordBtn">Ubah Kata Sandi</button>
+        </div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -517,95 +604,7 @@
   </div>
 </div>
 
-<!-- ============ MODAL PENGATURAN ============ -->
-<div class="overlay" id="settingsOverlay">
-  <div class="modal" style="max-width:420px;">
-    <button class="close-x" id="closeSettings">✕</button>
-    <h2>Pengaturan</h2>
-    <p class="meta">Nomor WhatsApp yang dituju otomatis saat pelanggan selesai memesan.</p>
-
-    <div class="field">
-      <label>Nomor WhatsApp Admin</label>
-      <input type="text" id="settingsWaNumber" placeholder="Contoh: 0882006550939 atau 62882006550939">
-    </div>
-    <p style="font-size:.78rem;color:var(--ink-soft);margin-top:-8px;margin-bottom:20px;">
-      Boleh diawali 08 atau 62, sistem akan menyesuaikan otomatis.
-    </p>
-
-    <div class="field">
-      <label>Instagram (URL lengkap)</label>
-      <input type="text" id="settingsInstagram" placeholder="https://instagram.com/rozida.official">
-    </div>
-    <div class="field">
-      <label>TikTok (URL lengkap)</label>
-      <input type="text" id="settingsTiktok" placeholder="https://tiktok.com/@rozida.official">
-    </div>
-    <div class="field">
-      <label>Facebook (URL lengkap)</label>
-      <input type="text" id="settingsFacebook" placeholder="https://facebook.com/rozida.official">
-    </div>
-
-    <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
-    <h2 style="font-size:1.02rem;">Metode Pembayaran</h2>
-    <p class="meta">Pilih metode yang ingin ditampilkan di invoice pelanggan.</p>
-
-    <label class="toggle-pill"><input type="checkbox" id="paymentQrisEnabled"> Aktifkan QRIS</label>
-    <div class="field" style="margin-top:8px;">
-      <label>Gambar QRIS (opsional, untuk ditampilkan/upload ulang)</label>
-      <input type="file" id="paymentQrisFile" accept="image/*">
-      <div id="paymentQrisPreviewWrap" style="margin-top:8px;display:none;">
-        <img id="paymentQrisPreview" src="" alt="QRIS" style="max-width:160px;border-radius:8px;border:1px solid #eee;">
-      </div>
-    </div>
-
-    <label class="toggle-pill" style="margin-top:14px;"><input type="checkbox" id="paymentBankEnabled"> Aktifkan Transfer Bank</label>
-    <div class="field" style="margin-top:8px;">
-      <label>Nama Bank</label>
-      <input type="text" id="paymentBankName" placeholder="Contoh: BCA">
-    </div>
-    <div class="field">
-      <label>Nomor Rekening</label>
-      <input type="text" id="paymentBankNumber" placeholder="Contoh: 1234567890">
-    </div>
-    <div class="field">
-      <label>Atas Nama</label>
-      <input type="text" id="paymentBankHolder" placeholder="Nama pemilik rekening">
-    </div>
-
-    <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
-
-    <div class="modal-actions" style="justify-content:flex-end;">
-      <button class="btn btn-primary" id="saveSettingsBtn">Simpan Pengaturan</button>
-    </div>
-
-    <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
-    <h2 style="font-size:1.02rem;">Akun Admin</h2>
-    <p class="meta">Ubah email atau kata sandi login admin.</p>
-
-    <div class="field">
-      <label>Email Baru</label>
-      <input type="email" id="accountNewEmail" placeholder="email@baru.com">
-    </div>
-    <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
-      <button class="btn btn-outline" id="changeEmailBtn">Ubah Email</button>
-    </div>
-
-    <div class="field" style="margin-top:14px;">
-      <label>Kata Sandi Baru</label>
-      <input type="password" id="accountNewPassword" placeholder="Minimal 6 karakter">
-    </div>
-    <div class="field">
-      <label>Ulangi Kata Sandi Baru</label>
-      <input type="password" id="accountNewPasswordConfirm" placeholder="Ulangi kata sandi baru">
-    </div>
-    <div id="accountMsg" style="font-size:.82rem;margin-bottom:6px;min-height:18px;"></div>
-    <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
-      <button class="btn btn-outline" id="changePasswordBtn">Ubah Kata Sandi</button>
-    </div>
-  </div>
-</div>
-
-<script>
+<script>(() => {
 if (!window.__adminScriptLoaded) {
 window.__adminScriptLoaded = true;
 /* ====== ISI DENGAN DATA SUPABASE ANDA (sama seperti di index.html) ====== */
@@ -617,6 +616,61 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let allOrders = [];
 let currentOrderId = null;
+const STORAGE_KEY_ORDERS = 'rozida.orders';
+const STORAGE_KEY_GALLERY = 'rozida.gallery';
+const STORAGE_KEY_SETTINGS = 'rozida.settings';
+const SYNC_CHANNEL = 'rozida-sync';
+let syncChannel = window.BroadcastChannel ? new BroadcastChannel(SYNC_CHANNEL) : null;
+
+function getLocalOrders() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS) || '[]');
+  } catch (err) {
+    return [];
+  }
+}
+
+function getLocalGallery() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
+  } catch (err) {
+    return [];
+  }
+}
+
+function getLocalSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
+  } catch (err) {
+    return {};
+  }
+}
+
+function saveLocalSettings(settingsObj) {
+  try {
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settingsObj));
+  } catch (err) {
+    console.warn('Gagal menyimpan pengaturan ke localStorage:', err);
+  }
+}
+
+function notifySync(type) {
+  if (syncChannel) syncChannel.postMessage({ type });
+}
+
+if (syncChannel) {
+  syncChannel.onmessage = (event) => {
+    if (event.data?.type === 'orders-updated') loadOrders();
+    if (event.data?.type === 'gallery-updated') loadGalleryAdmin();
+    if (event.data?.type === 'settings-updated') populateSettingsForm();
+  };
+}
+
+window.addEventListener('storage', (event) => {
+  if (event.key === STORAGE_KEY_ORDERS) loadOrders();
+  if (event.key === STORAGE_KEY_GALLERY) loadGalleryAdmin();
+  if (event.key === STORAGE_KEY_SETTINGS) populateSettingsForm();
+});
 
 /* ---------- AUTH ---------- */
 const loginScreen = document.getElementById('loginScreen');
@@ -632,10 +686,22 @@ async function checkSession(){
   }
 }
 
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+    if (session?.user) showDashboard(session.user);
+  } else if (event === 'SIGNED_OUT') {
+    loginScreen.style.display = 'flex';
+    dashboard.style.display = 'none';
+  }
+});
+
 function showDashboard(user){
   loginScreen.style.display = 'none';
   dashboard.style.display = 'block';
   document.getElementById('whoEmail').textContent = user.email;
+  renderStats();
+  renderTable();
+  populateOrderPicker();
   loadOrders();
   subscribeRealtime();
   loadAgendaAdmin();
@@ -652,6 +718,9 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById(btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'tabPengaturan') {
+      populateSettingsForm();
+    }
   });
 });
 
@@ -665,6 +734,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
 
+  if (!email || !password) {
+    msg.textContent = 'Masukkan email dan kata sandi admin Supabase.';
+    btn.disabled = false; btn.textContent = 'Masuk';
+    return;
+  }
+
   try {
     if (SUPABASE_URL.includes('YOUR-PROJECT') || SUPABASE_ANON_KEY.includes('YOUR-ANON')) {
       throw new Error('SUPABASE_URL / SUPABASE_ANON_KEY di dalam file ini belum diganti dengan punya Anda.');
@@ -673,9 +748,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error){
-      msg.textContent = error.message === 'Invalid login credentials'
-        ? 'Email atau password salah.'
-        : 'Gagal login: ' + error.message;
+      let friendly = 'Email atau password salah.';
+      if (error.message?.includes('Email not confirmed')) {
+        friendly = 'Email belum dikonfirmasi. Verifikasi akun Anda di Supabase Auth terlebih dulu.';
+      } else if (error.message?.includes('signups not allowed')) {
+        friendly = 'Pendaftaran akun dinonaktifkan di proyek Supabase Anda.';
+      } else if (error.message) {
+        friendly = 'Gagal login: ' + error.message;
+      }
+      msg.textContent = friendly;
       btn.disabled = false; btn.textContent = 'Masuk';
       return;
     }
@@ -694,16 +775,35 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 /* ---------- LOAD ORDERS ---------- */
 async function loadOrders(){
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error){
-    console.error(error);
-    return;
+  const localOrders = getLocalOrders();
+  if (localOrders.length) {
+    allOrders = localOrders.slice().sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
+    renderStats();
+    renderTable();
+    populateOrderPicker();
   }
-  allOrders = data || [];
+
+  let remoteData = [];
+  let error = null;
+
+  try {
+    const response = await supabase
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    remoteData = response.data || [];
+    error = response.error;
+  } catch (err) {
+    error = err;
+  }
+
+  if (error) {
+    console.warn('Gagal memuat order dari Supabase, memakai data lokal:', error);
+  }
+
+  const merged = [...remoteData, ...localOrders.filter(local => !remoteData.some(remote => remote.id === local.id))];
+  allOrders = merged.sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
+
   renderStats();
   renderTable();
   populateOrderPicker();
@@ -868,8 +968,7 @@ document.getElementById('deleteBtn').addEventListener('click', async () => {
   loadOrders();
 });
 
-/* ---------- PENGATURAN (nomor WhatsApp admin) ---------- */
-const settingsOverlay = document.getElementById('settingsOverlay');
+/* ---------- PENGATURAN (inline di tab Pengaturan) ---------- */
 const settingsMsg = document.getElementById('settingsMsg');
 
 function normalizePhone(raw) {
@@ -887,13 +986,27 @@ const SETTINGS_KEYS = [
 let settingsMap = {};
 
 async function loadSettingsMap(){
-  const { data } = await supabase.from('settings').select('key,value').in('key', SETTINGS_KEYS);
-  settingsMap = {};
-  (data || []).forEach(d => settingsMap[d.key] = d.value);
+  const fallbackSettings = getLocalSettings();
+  try {
+    const { data, error } = await supabase.from('settings').select('key,value').in('key', SETTINGS_KEYS);
+    if (!error && data) {
+      settingsMap = {};
+      (data || []).forEach(d => settingsMap[d.key] = d.value);
+      saveLocalSettings(settingsMap);
+      return settingsMap;
+    }
+    if (error) {
+      console.warn('Gagal memuat pengaturan dari Supabase, memakai data lokal:', error);
+    }
+  } catch (err) {
+    console.warn('Gagal memuat pengaturan dari Supabase, memakai data lokal:', err);
+  }
+
+  settingsMap = fallbackSettings;
   return settingsMap;
 }
 
-document.getElementById('settingsBtn').addEventListener('click', async () => {
+async function populateSettingsForm(){
   settingsMsg.textContent = '';
   document.getElementById('accountMsg').textContent = '';
   await loadSettingsMap();
@@ -914,11 +1027,13 @@ document.getElementById('settingsBtn').addEventListener('click', async () => {
   } else {
     qrisWrap.style.display = 'none';
   }
-  settingsOverlay.classList.add('show');
-});
+}
 
-document.getElementById('closeSettings').addEventListener('click', () => settingsOverlay.classList.remove('show'));
-settingsOverlay.addEventListener('click', (e) => { if (e.target === settingsOverlay) settingsOverlay.classList.remove('show'); });
+document.getElementById('settingsBtn').addEventListener('click', async () => {
+  const settingsTabBtn = document.querySelector('.tab-btn[data-tab="tabPengaturan"]');
+  if (settingsTabBtn) settingsTabBtn.click();
+  await populateSettingsForm();
+});
 
 document.getElementById('saveSettingsBtn').addEventListener('click', async () => {
   const raw = document.getElementById('settingsWaNumber').value.trim();
@@ -960,33 +1075,45 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     qrisImageUrl = pub.publicUrl;
   }
 
-  const { error } = await supabase
-    .from('settings')
-    .upsert([
-      { key: 'admin_whatsapp', value: normalized },
-      { key: 'instagram_url', value: instagram },
-      { key: 'tiktok_url', value: tiktok },
-      { key: 'facebook_url', value: facebook },
-      { key: 'payment_qris_enabled', value: String(qrisEnabled) },
-      { key: 'payment_qris_image', value: qrisImageUrl },
-      { key: 'payment_bank_enabled', value: String(bankEnabled) },
-      { key: 'payment_bank_name', value: bankName },
-      { key: 'payment_bank_number', value: bankNumber },
-      { key: 'payment_bank_holder', value: bankHolder }
-    ], { onConflict: 'key' });
+  const settingsPayload = {
+    admin_whatsapp: normalized,
+    instagram_url: instagram,
+    tiktok_url: tiktok,
+    facebook_url: facebook,
+    payment_qris_enabled: String(qrisEnabled),
+    payment_qris_image: qrisImageUrl,
+    payment_bank_enabled: String(bankEnabled),
+    payment_bank_name: bankName,
+    payment_bank_number: bankNumber,
+    payment_bank_holder: bankHolder
+  };
+
+  let remoteError = null;
+  try {
+    const { error } = await supabase
+      .from('settings')
+      .upsert(Object.entries(settingsPayload).map(([key, value]) => ({ key, value })), { onConflict: 'key' });
+    remoteError = error;
+  } catch (err) {
+    remoteError = err;
+  }
 
   btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
 
-  if (error) {
-    settingsMsg.textContent = 'Gagal menyimpan: ' + error.message;
+  settingsMap = { ...settingsMap, ...settingsPayload };
+  saveLocalSettings(settingsMap);
+  notifySync('settings-updated');
+  document.getElementById('settingsWaNumber').value = normalized;
+  await loadSettingsMap();
+
+  if (remoteError) {
+    settingsMsg.textContent = 'Pengaturan tersimpan lokal dan akan dipakai di browser ini. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
     settingsMsg.style.color = '#a13232';
     return;
   }
 
   settingsMsg.textContent = 'Pengaturan berhasil disimpan.';
   settingsMsg.style.color = '#2f7a4f';
-  document.getElementById('settingsWaNumber').value = normalized;
-  await loadSettingsMap();
 });
 
 /* ---------- AKUN ADMIN: ubah email & kata sandi ---------- */
@@ -1182,17 +1309,40 @@ testiForm.addEventListener('submit', async (e) => {
 const galleryFormMsg = document.getElementById('galleryFormMsg');
 
 async function loadGalleryAdmin(){
-  const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
   const grid = document.getElementById('galleryAdminGrid');
-  if (error){
-    grid.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
-    return;
+  const localGallery = getLocalGallery();
+  if (localGallery.length) {
+    grid.innerHTML = localGallery.map(g => `
+      <div class="gallery-admin-item">
+        <img src="${g.image_url}" alt="${escapeHtml(g.caption||'')}">
+        ${g.caption ? `<div class="gcap">${escapeHtml(g.caption)}</div>` : ''}
+        <button class="gdel" data-id="${g.id}" data-path="${g.storage_path||''}" title="Hapus">✕</button>
+      </div>
+    `).join('');
   }
-  if (!data || !data.length){
+
+  let remoteData = [];
+  let error = null;
+
+  try {
+    const response = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    remoteData = response.data || [];
+    error = response.error;
+  } catch (err) {
+    error = err;
+  }
+
+  if (error) {
+    console.warn('Gagal memuat gallery dari Supabase, memakai data lokal:', error);
+  }
+
+  const merged = [...remoteData, ...localGallery.filter(local => !remoteData.some(remote => remote.id === local.id))];
+
+  if (!merged.length){
     grid.innerHTML = '<p class="empty-state">Belum ada foto.</p>';
     return;
   }
-  grid.innerHTML = data.map(g => `
+  grid.innerHTML = merged.map(g => `
     <div class="gallery-admin-item">
       <img src="${g.image_url}" alt="${escapeHtml(g.caption||'')}">
       ${g.caption ? `<div class="gcap">${escapeHtml(g.caption)}</div>` : ''}
@@ -1230,19 +1380,55 @@ document.getElementById('galleryUploadBtn').addEventListener('click', async () =
   btn.disabled = true; btn.textContent = 'Mengunggah...';
 
   try {
-    const { error: upErr } = await supabase.storage.from('gallery').upload(path, file, { upsert: false });
-    if (upErr) throw upErr;
+    let uploadUrl = '';
+    let remoteError = null;
 
-    const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
-    const { error: dbErr } = await supabase.from('gallery').insert([{
-      image_url: pub.publicUrl,
+    try {
+      const { error: upErr } = await supabase.storage.from('gallery').upload(path, file, { upsert: false });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
+      uploadUrl = pub.publicUrl;
+    } catch (err) {
+      remoteError = err;
+      uploadUrl = URL.createObjectURL(file);
+    }
+
+    if (!uploadUrl) throw new Error('Tidak ada URL gambar yang dihasilkan.');
+
+    try {
+      const { error: dbErr } = await supabase.from('gallery').insert([{
+        image_url: uploadUrl,
+        storage_path: path,
+        caption: caption
+      }]);
+      if (dbErr) throw dbErr;
+    } catch (err) {
+      remoteError = err;
+    }
+
+    const localItem = {
+      id: `local-${Date.now()}`,
+      image_url: uploadUrl,
       storage_path: path,
-      caption: caption
-    }]);
-    if (dbErr) throw dbErr;
+      caption: caption,
+      created_at: new Date().toISOString()
+    };
+    try {
+      const list = JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
+      list.unshift(localItem);
+      localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(list));
+    } catch (err) {
+      console.warn('Gagal menulis gallery lokal', err);
+    }
+    notifySync('gallery-updated');
 
-    galleryFormMsg.textContent = 'Foto berhasil diunggah.';
-    galleryFormMsg.style.color = '#2f7a4f';
+    if (remoteError) {
+      galleryFormMsg.textContent = 'Foto disimpan lokal dan siap tampil di admin. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
+      galleryFormMsg.style.color = '#a13232';
+    } else {
+      galleryFormMsg.textContent = 'Foto berhasil diunggah.';
+      galleryFormMsg.style.color = '#2f7a4f';
+    }
     fileInput.value = '';
     document.getElementById('galleryCaption').value = '';
     loadGalleryAdmin();
@@ -1562,6 +1748,7 @@ document.getElementById('importOrdersFile').addEventListener('change', async (e)
 
 checkSession();
 } // end __adminScriptLoaded guard
+})();
 </script>
 </body>
 </html>
