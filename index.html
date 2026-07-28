@@ -491,18 +491,8 @@
       <div id="formArea">
         <form id="orderForm">
           <div class="field">
-            <label>Pilih Layanan</label>
-            <div class="service-chips" id="chips">
-              <div class="chip" data-value="Buket">Buket</div>
-              <div class="chip" data-value="Mahar">Mahar</div>
-              <div class="chip" data-value="Seserahan">Seserahan</div>
-              <div class="chip" data-value="Paket Prewedding">Paket Prewedding</div>
-              <div class="chip" data-value="Paket Sinoman">Paket Sinoman</div>
-              <div class="chip" data-value="Hias & Sewa Mobil">Hias &amp; Sewa Mobil</div>
-              <div class="chip" data-value="Nafa Snack">Nafa Snack</div>
-              <div class="chip" data-value="Sewa Kebaya">Sewa Kebaya</div>
-              <div class="chip" data-value="Lainnya">Lainnya</div>
-            </div>
+            <label>Layanan yang Dibutuhkan</label>
+            <input type="text" id="service_type" required placeholder="Contoh: Buket, Mahar, Paket Prewedding, dll. (tulis sesuai kebutuhan Anda)">
           </div>
 
           <div class="row2">
@@ -610,22 +600,10 @@ function updateWaDisplay(number) {
   document.getElementById('footerWaText').textContent = 'WhatsApp: ' + display;
 }
 
-let selectedService = "";
-document.querySelectorAll('.chip').forEach(chip => {
-  chip.addEventListener('click', () => {
-    document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
-    chip.classList.add('active');
-    selectedService = chip.dataset.value;
-  });
-});
-
 document.querySelectorAll('.svc-card').forEach(card => {
   card.addEventListener('click', () => {
     const service = card.dataset.service.replace('&amp;', '&');
-    document.querySelectorAll('.chip').forEach(c => {
-      c.classList.toggle('active', c.dataset.value === service);
-      if (c.dataset.value === service) selectedService = service;
-    });
+    document.getElementById('service_type').value = service;
     document.getElementById('pesan').scrollIntoView({behavior:'smooth'});
   });
 });
@@ -639,22 +617,22 @@ form.addEventListener('submit', async (e) => {
   formMsg.textContent = '';
   formMsg.className = 'form-msg';
 
-  if (!selectedService) {
-    formMsg.textContent = 'Silakan pilih layanan terlebih dahulu.';
-    formMsg.classList.add('error');
-    return;
-  }
-
   const payload = {
     customer_name: document.getElementById('customer_name').value.trim(),
     phone: document.getElementById('phone').value.trim(),
     address: document.getElementById('address').value.trim(),
-    service_type: selectedService,
+    service_type: document.getElementById('service_type').value.trim(),
     package_detail: document.getElementById('package_detail').value.trim(),
     event_date: document.getElementById('event_date').value || null,
     notes: document.getElementById('notes').value.trim(),
     status: 'Baru'
   };
+
+  if (!payload.service_type) {
+    formMsg.textContent = 'Silakan isi layanan yang dibutuhkan terlebih dahulu.';
+    formMsg.classList.add('error');
+    return;
+  }
 
   if (!payload.customer_name || !payload.phone) {
     formMsg.textContent = 'Nama dan No. WhatsApp wajib diisi.';
