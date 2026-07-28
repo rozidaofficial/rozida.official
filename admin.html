@@ -405,6 +405,22 @@
             <input type="number" id="invAmount" required placeholder="0">
           </div>
           <div class="field">
+            <label>Nama Bank</label>
+            <input type="text" id="invBankName" placeholder="Contoh: BRI / BCA">
+          </div>
+          <div class="field">
+            <label>No. Rekening</label>
+            <input type="text" id="invBankNumber" placeholder="1234xxxx">
+          </div>
+          <div class="field">
+            <label>Atas Nama</label>
+            <input type="text" id="invBankHolder" placeholder="Nama pemilik rekening">
+          </div>
+          <div class="field">
+            <label>Upload QRIS</label>
+            <input type="file" id="invQrisFile" accept="image/*">
+          </div>
+          <div class="field">
             <label>Status Pembayaran</label>
             <select id="invStatus">
               <option value="unpaid">Belum Lunas</option>
@@ -1481,7 +1497,7 @@ async function loadInvoicesAdmin(){
         <h4>${escapeHtml(inv.customer_name)} — Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}
           ${inv.status === 'paid' ? '<span style="color:#2f7a4f;font-size:.72rem;">(Lunas)</span>' : '<span style="color:#a13232;font-size:.72rem;">(Belum Lunas)</span>'}
         </h4>
-        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}</p>
+        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}${(inv.bank_name || inv.bank_account_number || inv.bank_account_holder) ? ` · Rek: ${escapeHtml([inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean).join(' / '))}` : ''}${inv.qris_image_url ? ' · QRIS terlampir' : ''}</p>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
@@ -1535,11 +1551,31 @@ async function loadInvoicesAdmin(){
   });
 }
 
+async function uploadInvoiceQris(file) {
+  if (!file) return { url: null, path: null };
+  const path = `invoice-qris/${Date.now()}_${file.name}`;
+  const { error: upErr } = await supabase.storage.from('gallery').upload(path, file, { upsert: false });
+  if (upErr) throw upErr;
+  const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
+  return { url: pub.publicUrl, path };
+}
+
 invoiceForm.addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = document.getElementById('invoiceSubmitBtn');
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   invoiceFormMsg.textContent = '';
+
+  let qrisData = { url: null, path: null };
+  const qrisFile = document.getElementById('invQrisFile').files[0];
+  try {
+    qrisData = await uploadInvoiceQris(qrisFile);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = 'Simpan Invoice';
+    invoiceFormMsg.textContent = 'Gagal upload QRIS: ' + (err.message || err);
+    invoiceFormMsg.style.color = '#a13232';
+    return;
+  }
 
   const payload = {
     order_id: document.getElementById('invOrderPicker').value || null,
@@ -1547,6 +1583,11 @@ invoiceForm.addEventListener('submit', async (e) => {
     phone: document.getElementById('invPhone').value.trim(),
     description: document.getElementById('invDesc').value.trim(),
     amount: Number(document.getElementById('invAmount').value || 0),
+    bank_name: document.getElementById('invBankName').value.trim() || null,
+    bank_account_number: document.getElementById('invBankNumber').value.trim() || null,
+    bank_account_holder: document.getElementById('invBankHolder').value.trim() || null,
+    qris_image_url: qrisData.url,
+    qris_storage_path: qrisData.path,
     status: document.getElementById('invStatus').value
   };
 
@@ -1575,6 +1616,7 @@ invoiceForm.addEventListener('submit', async (e) => {
   invoiceFormMsg.textContent = 'Invoice tersimpan.';
   invoiceFormMsg.style.color = '#2f7a4f';
   invoiceForm.reset();
+  document.getElementById('invQrisFile').value = '';
   loadInvoicesAdmin();
 });
 
@@ -1597,6 +1639,8 @@ async function generateInvoicePDF(inv){
         <tr><td style="padding:6px 0;">WA</td><td style="padding:6px 0;">${escapeHtml(inv.phone)}</td></tr>
         <tr><td style="padding:6px 0;">Rincian</td><td style="padding:6px 0;">${escapeHtml(inv.description || '')}</td></tr>
         <tr><td style="padding:6px 0;">Jumlah</td><td style="padding:6px 0;">Rp ${Number(inv.amount||0).toLocaleString('id-ID')}</td></tr>
+        ${((inv.bank_name || inv.bank_account_number || inv.bank_account_holder)) ? `<tr><td style="padding:6px 0;">Rekening</td><td style="padding:6px 0;">${escapeHtml([inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean).join(' / '))}</td></tr>` : ''}
+        ${inv.qris_image_url ? `<tr><td style="padding:6px 0;">QRIS</td><td style="padding:6px 0;"><img src="${inv.qris_image_url}" style="max-width:180px;height:auto;display:block;margin-top:6px;" /></td></tr>` : ''}
         <tr><td style="padding:6px 0;">Status</td><td style="padding:6px 0;">${inv.status}</td></tr>
       </table>
       <div style="margin-top:20px;color:#6b6055;">Terima kasih telah memesan di Rozida.Official 🌷</div>
@@ -1633,11 +1677,15 @@ function buildInvoiceMessage(inv){
   if (inv.status !== 'paid'){
     lines.push('');
     lines.push('Pembayaran dapat dilakukan melalui:');
-    if (settingsMap.payment_qris_enabled === 'true'){
-      lines.push('- QRIS (scan kode yang kami kirimkan / lihat lampiran)');
+    const bankName = inv.bank_name || settingsMap.payment_bank_name || '';
+    const bankNumber = inv.bank_account_number || settingsMap.payment_bank_number || '';
+    const bankHolder = inv.bank_account_holder || settingsMap.payment_bank_holder || '';
+    const qrisUrl = inv.qris_image_url || settingsMap.payment_qris_image || '';
+    if (qrisUrl) {
+      lines.push(`- QRIS: ${qrisUrl}`);
     }
-    if (settingsMap.payment_bank_enabled === 'true'){
-      lines.push(`- Transfer Bank ${settingsMap.payment_bank_name || ''} No. Rek ${settingsMap.payment_bank_number || ''} a.n ${settingsMap.payment_bank_holder || ''}`);
+    if (bankName || bankNumber || bankHolder) {
+      lines.push(`- Transfer ${bankName} No. Rek ${bankNumber} a.n ${bankHolder}`);
     }
   }
   lines.push('');
