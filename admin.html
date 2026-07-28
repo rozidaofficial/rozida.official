@@ -750,7 +750,9 @@ function showDashboard(user){
   renderStats();
   renderTable();
   populateOrderPicker();
-  loadSettingsMap();
+  loadSettingsMap().then(() => {
+    renderInvoiceBankAccountOptions();
+  });
   loadOrders();
   subscribeRealtime();
   loadAgendaAdmin();
@@ -1136,6 +1138,7 @@ async function loadSettingsMap(){
       settingsMap = {};
       (data || []).forEach(d => settingsMap[d.key] = d.value);
       saveLocalSettings(settingsMap);
+      renderInvoiceBankAccountOptions();
       return settingsMap;
     }
     if (error) {
@@ -1146,6 +1149,7 @@ async function loadSettingsMap(){
   }
 
   settingsMap = fallbackSettings;
+  renderInvoiceBankAccountOptions();
   return settingsMap;
 }
 
@@ -1238,9 +1242,8 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
 
   let remoteError = null;
   try {
-    const { error } = await supabase
-      .from('settings')
-      .upsert(Object.entries(settingsPayload).map(([key, value]) => ({ key, value })), { onConflict: 'key' });
+    const rows = Object.entries(settingsPayload).map(([key, value]) => ({ key, value }));
+    const { error } = await supabase.from('settings').upsert(rows, { onConflict: 'key' });
     remoteError = error;
   } catch (err) {
     remoteError = err;
@@ -1253,6 +1256,7 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   notifySync('settings-updated');
   document.getElementById('settingsWaNumber').value = normalized;
   await loadSettingsMap();
+  renderInvoiceBankAccountOptions();
 
   if (remoteError) {
     if (isSettingsSyncSchemaError(remoteError)) {
@@ -1726,6 +1730,7 @@ document.getElementById('invOrderPicker').addEventListener('change', (e) => {
 
 async function loadInvoicesAdmin(){
   await loadSettingsMap();
+  renderInvoiceBankAccountOptions();
   const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
   const list = document.getElementById('invoiceAdminList');
   if (error){
