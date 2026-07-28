@@ -77,6 +77,47 @@
 
   main.dash{max-width:1280px;margin:0 auto;padding:30px 24px 60px;}
 
+  /* tabs */
+  .tabs{display:flex;gap:6px;margin-bottom:26px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .tab-btn{background:none;border:none;padding:10px 18px;font-family:'Jost',sans-serif;font-size:.86rem;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab-btn.active{color:var(--gold-deep);border-bottom-color:var(--gold);font-weight:500;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+
+  .panel-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:22px;}
+  .panel-card h3{margin:0 0 16px;font-size:1.25rem;}
+  .inline-form{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:end;}
+  @media(max-width:900px){.inline-form{grid-template-columns:1fr 1fr;}}
+  @media(max-width:560px){.inline-form{grid-template-columns:1fr;}}
+  .inline-form .field{margin-bottom:0;}
+  .inline-form label{display:block;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;}
+  .inline-form input, .inline-form select, .inline-form textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:9px;
+    font-family:'Jost',sans-serif;font-size:.85rem;background:var(--ivory);color:var(--ink);
+  }
+  .list-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
+  .list-row:last-child{border-bottom:none;}
+  .list-row .info{flex:1;}
+  .list-row .info h4{margin:0 0 4px;font-size:.95rem;}
+  .list-row .info p{margin:0;font-size:.8rem;color:var(--ink-soft);}
+  .list-row .actions{display:flex;gap:8px;flex-shrink:0;}
+  .mini-btn{border:1px solid var(--border);background:var(--white);border-radius:8px;padding:6px 12px;font-size:.76rem;cursor:pointer;color:var(--ink);}
+  .mini-btn:hover{border-color:var(--gold);}
+  .mini-btn.danger{color:#a13232;border-color:#f0cfcf;}
+  .mini-btn.danger:hover{background:#fbe7e7;}
+  .toggle-pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;cursor:pointer;color:var(--ink-soft);}
+  .stars-input{display:flex;gap:4px;font-size:1.2rem;color:var(--gold);cursor:pointer;user-select:none;}
+  .stars-input span.off{color:#ddd;}
+
+  /* gallery admin */
+  .gallery-admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;}
+  .gallery-admin-item{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);aspect-ratio:1/1;}
+  .gallery-admin-item img{width:100%;height:100%;object-fit:cover;display:block;}
+  .gallery-admin-item .gcap{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:.68rem;padding:6px 8px;}
+  .gallery-admin-item .gdel{position:absolute;top:6px;right:6px;background:rgba(161,50,50,.9);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:.75rem;cursor:pointer;}
+  .upload-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:20px;}
+  .upload-row .field{flex:1;min-width:200px;}
+
   .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:30px;}
   @media(max-width:820px){.stats{grid-template-columns:repeat(2,1fr);}}
   .stat-card{
@@ -200,47 +241,147 @@
       <div class="stat-card"><div class="num" id="statSelesai">0</div><div class="lbl">Selesai (Bulan Ini)</div></div>
     </div>
 
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <input type="text" id="searchBox" placeholder="Cari nama atau no. WhatsApp...">
-        <select id="filterService">
-          <option value="">Semua Layanan</option>
-          <option>Buket</option>
-          <option>Mahar</option>
-          <option>Seserahan</option>
-          <option>Paket Prewedding</option>
-          <option>Paket Sinoman</option>
-          <option>Hias & Sewa Mobil</option>
-        </select>
-        <select id="filterStatus">
-          <option value="">Semua Status</option>
-          <option>Baru</option>
-          <option>Diproses</option>
-          <option>Siap</option>
-          <option>Selesai</option>
-          <option>Dibatalkan</option>
-        </select>
-      </div>
-      <button class="btn btn-outline" id="refreshBtn">Muat Ulang</button>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabPesanan">Pesanan</button>
+      <button class="tab-btn" data-tab="tabKalender">Kalender</button>
+      <button class="tab-btn" data-tab="tabTestimoni">Testimoni</button>
+      <button class="tab-btn" data-tab="tabGallery">Galeri</button>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Masuk</th>
-            <th>Pelanggan</th>
-            <th>Layanan</th>
-            <th>Tgl Acara</th>
-            <th>Status</th>
-            <th>Harga</th>
-          </tr>
-        </thead>
-        <tbody id="ordersBody"></tbody>
-      </table>
-      <div class="empty-state" id="emptyState" style="display:none;">
-        <h3>Belum ada pesanan</h3>
-        <p>Pesanan baru dari pelanggan akan otomatis muncul di sini.</p>
+    <!-- ===== TAB PESANAN ===== -->
+    <div class="tab-panel active" id="tabPesanan">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <input type="text" id="searchBox" placeholder="Cari nama atau no. WhatsApp...">
+          <select id="filterService">
+            <option value="">Semua Layanan</option>
+            <option>Buket</option>
+            <option>Mahar</option>
+            <option>Seserahan</option>
+            <option>Paket Prewedding</option>
+            <option>Paket Sinoman</option>
+            <option>Hias & Sewa Mobil</option>
+            <option>Nafa Snack</option>
+            <option>Sewa Kebaya</option>
+            <option>Lainnya</option>
+          </select>
+          <select id="filterStatus">
+            <option value="">Semua Status</option>
+            <option>Baru</option>
+            <option>Diproses</option>
+            <option>Siap</option>
+            <option>Selesai</option>
+            <option>Dibatalkan</option>
+          </select>
+        </div>
+        <button class="btn btn-outline" id="refreshBtn">Muat Ulang</button>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Masuk</th>
+              <th>Pelanggan</th>
+              <th>Layanan</th>
+              <th>Tgl Acara</th>
+              <th>Status</th>
+              <th>Harga</th>
+            </tr>
+          </thead>
+          <tbody id="ordersBody"></tbody>
+        </table>
+        <div class="empty-state" id="emptyState" style="display:none;">
+          <h3>Belum ada pesanan</h3>
+          <p>Pesanan baru dari pelanggan akan otomatis muncul di sini.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB KALENDER / AGENDA ===== -->
+    <div class="tab-panel" id="tabKalender">
+      <div class="panel-card">
+        <h3>Tambah Agenda</h3>
+        <form id="agendaForm" class="inline-form">
+          <div class="field">
+            <label>Tanggal</label>
+            <input type="date" id="agendaDate" required>
+          </div>
+          <div class="field">
+            <label>Judul</label>
+            <input type="text" id="agendaTitle" required placeholder="Contoh: Akad Nikah - Bu Sari">
+          </div>
+          <div class="field" style="grid-column:span 2;">
+            <label>Catatan (opsional)</label>
+            <input type="text" id="agendaNote" placeholder="Lokasi / detail singkat">
+          </div>
+          <div class="field">
+            <button type="submit" class="btn btn-primary" id="agendaSubmitBtn" style="width:100%;">Simpan Agenda</button>
+          </div>
+        </form>
+        <div id="agendaFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
+      </div>
+      <div class="panel-card">
+        <h3>Daftar Agenda</h3>
+        <div id="agendaAdminList"><p class="empty-state">Memuat...</p></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB TESTIMONI ===== -->
+    <div class="tab-panel" id="tabTestimoni">
+      <div class="panel-card">
+        <h3>Tambah Testimoni</h3>
+        <form id="testiForm" class="inline-form">
+          <div class="field">
+            <label>Nama Pelanggan</label>
+            <input type="text" id="testiName" required placeholder="Nama pelanggan">
+          </div>
+          <div class="field">
+            <label>Rating</label>
+            <select id="testiRating">
+              <option value="5">★★★★★ (5)</option>
+              <option value="4">★★★★☆ (4)</option>
+              <option value="3">★★★☆☆ (3)</option>
+              <option value="2">★★☆☆☆ (2)</option>
+              <option value="1">★☆☆☆☆ (1)</option>
+            </select>
+          </div>
+          <div class="field" style="grid-column:span 2;">
+            <label>Isi Testimoni</label>
+            <input type="text" id="testiMessage" required placeholder="Tulis testimoni pelanggan di sini...">
+          </div>
+          <div class="field">
+            <label class="toggle-pill"><input type="checkbox" id="testiPublished" checked> Tampilkan di website</label>
+          </div>
+          <div class="field">
+            <button type="submit" class="btn btn-primary" id="testiSubmitBtn" style="width:100%;">Simpan Testimoni</button>
+          </div>
+        </form>
+        <div id="testiFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
+      </div>
+      <div class="panel-card">
+        <h3>Daftar Testimoni</h3>
+        <div id="testiAdminList"><p class="empty-state">Memuat...</p></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB GALERI ===== -->
+    <div class="tab-panel" id="tabGallery">
+      <div class="panel-card">
+        <h3>Upload Foto Galeri</h3>
+        <div class="upload-row">
+          <div class="field">
+            <label style="display:block;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;">Pilih Foto</label>
+            <input type="file" id="galleryFile" accept="image/*">
+          </div>
+          <div class="field">
+            <label style="display:block;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;">Keterangan (opsional)</label>
+            <input type="text" id="galleryCaption" placeholder="Contoh: Buket wisuda tema pastel">
+          </div>
+          <button class="btn btn-primary" id="galleryUploadBtn">Upload</button>
+        </div>
+        <div id="galleryFormMsg" style="font-size:.82rem;margin-bottom:10px;min-height:16px;"></div>
+        <div class="gallery-admin-grid" id="galleryAdminGrid"></div>
       </div>
     </div>
   </main>
@@ -303,10 +444,23 @@
       Boleh diawali 08 atau 62, sistem akan menyesuaikan otomatis.
     </p>
 
+    <div class="field">
+      <label>Instagram (URL lengkap)</label>
+      <input type="text" id="settingsInstagram" placeholder="https://instagram.com/rozida.official">
+    </div>
+    <div class="field">
+      <label>TikTok (URL lengkap)</label>
+      <input type="text" id="settingsTiktok" placeholder="https://tiktok.com/@rozida.official">
+    </div>
+    <div class="field">
+      <label>Facebook (URL lengkap)</label>
+      <input type="text" id="settingsFacebook" placeholder="https://facebook.com/rozida.official">
+    </div>
+
     <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
 
     <div class="modal-actions" style="justify-content:flex-end;">
-      <button class="btn btn-primary" id="saveSettingsBtn">Simpan Nomor</button>
+      <button class="btn btn-primary" id="saveSettingsBtn">Simpan Pengaturan</button>
     </div>
   </div>
 </div>
@@ -344,7 +498,20 @@ function showDashboard(user){
   document.getElementById('whoEmail').textContent = user.email;
   loadOrders();
   subscribeRealtime();
+  loadAgendaAdmin();
+  loadTestimonialsAdmin();
+  loadGalleryAdmin();
 }
+
+/* ---------- TABS ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(btn.dataset.tab).classList.add('active');
+  });
+});
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -562,8 +729,14 @@ function normalizePhone(raw) {
 
 document.getElementById('settingsBtn').addEventListener('click', async () => {
   settingsMsg.textContent = '';
-  const { data } = await supabase.from('settings').select('value').eq('key', 'admin_whatsapp').maybeSingle();
-  document.getElementById('settingsWaNumber').value = data && data.value ? data.value : '';
+  const { data } = await supabase.from('settings').select('key,value')
+    .in('key', ['admin_whatsapp','instagram_url','tiktok_url','facebook_url']);
+  const map = {};
+  (data || []).forEach(d => map[d.key] = d.value);
+  document.getElementById('settingsWaNumber').value = map.admin_whatsapp || '';
+  document.getElementById('settingsInstagram').value = map.instagram_url || '';
+  document.getElementById('settingsTiktok').value = map.tiktok_url || '';
+  document.getElementById('settingsFacebook').value = map.facebook_url || '';
   settingsOverlay.classList.add('show');
 });
 
@@ -585,11 +758,20 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   const btn = document.getElementById('saveSettingsBtn');
   btn.disabled = true; btn.textContent = 'Menyimpan...';
 
+  const instagram = document.getElementById('settingsInstagram').value.trim();
+  const tiktok = document.getElementById('settingsTiktok').value.trim();
+  const facebook = document.getElementById('settingsFacebook').value.trim();
+
   const { error } = await supabase
     .from('settings')
-    .upsert({ key: 'admin_whatsapp', value: normalized }, { onConflict: 'key' });
+    .upsert([
+      { key: 'admin_whatsapp', value: normalized },
+      { key: 'instagram_url', value: instagram },
+      { key: 'tiktok_url', value: tiktok },
+      { key: 'facebook_url', value: facebook }
+    ], { onConflict: 'key' });
 
-  btn.disabled = false; btn.textContent = 'Simpan Nomor';
+  btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
 
   if (error) {
     settingsMsg.textContent = 'Gagal menyimpan: ' + error.message;
@@ -597,9 +779,222 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
     return;
   }
 
-  settingsMsg.textContent = 'Nomor berhasil disimpan: ' + normalized;
+  settingsMsg.textContent = 'Pengaturan berhasil disimpan.';
   settingsMsg.style.color = '#2f7a4f';
   document.getElementById('settingsWaNumber').value = normalized;
+});
+
+/* ================= KALENDER / AGENDA ================= */
+const agendaForm = document.getElementById('agendaForm');
+const agendaFormMsg = document.getElementById('agendaFormMsg');
+let allAgenda = [];
+
+async function loadAgendaAdmin(){
+  const { data, error } = await supabase.from('agenda').select('*').order('event_date', { ascending: true });
+  const list = document.getElementById('agendaAdminList');
+  if (error){
+    list.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  allAgenda = data || [];
+  if (!allAgenda.length){
+    list.innerHTML = '<p class="empty-state">Belum ada agenda.</p>';
+    return;
+  }
+  list.innerHTML = allAgenda.map(a => `
+    <div class="list-row">
+      <div class="info">
+        <h4>${formatDateOnly(a.event_date)} — ${escapeHtml(a.title)}</h4>
+        <p>${escapeHtml(a.note || '')}</p>
+      </div>
+      <div class="actions">
+        <button class="mini-btn danger" data-id="${a.id}" data-action="del-agenda">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-action="del-agenda"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus agenda ini?')) return;
+      await supabase.from('agenda').delete().eq('id', btn.dataset.id);
+      loadAgendaAdmin();
+    });
+  });
+}
+
+agendaForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('agendaSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  agendaFormMsg.textContent = '';
+
+  const payload = {
+    event_date: document.getElementById('agendaDate').value,
+    title: document.getElementById('agendaTitle').value.trim(),
+    note: document.getElementById('agendaNote').value.trim()
+  };
+
+  const { error } = await supabase.from('agenda').insert([payload]);
+  btn.disabled = false; btn.textContent = 'Simpan Agenda';
+
+  if (error){
+    agendaFormMsg.textContent = 'Gagal menyimpan: ' + error.message;
+    agendaFormMsg.style.color = '#a13232';
+    return;
+  }
+  agendaFormMsg.textContent = 'Agenda berhasil ditambahkan.';
+  agendaFormMsg.style.color = '#2f7a4f';
+  agendaForm.reset();
+  loadAgendaAdmin();
+});
+
+/* ================= TESTIMONI ================= */
+const testiForm = document.getElementById('testiForm');
+const testiFormMsg = document.getElementById('testiFormMsg');
+
+async function loadTestimonialsAdmin(){
+  const { data, error } = await supabase.from('testimonials').select('*').order('created_at', { ascending: false });
+  const list = document.getElementById('testiAdminList');
+  if (error){
+    list.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  if (!data || !data.length){
+    list.innerHTML = '<p class="empty-state">Belum ada testimoni.</p>';
+    return;
+  }
+  list.innerHTML = data.map(t => `
+    <div class="list-row">
+      <div class="info">
+        <h4>${'★'.repeat(t.rating||5)}${'☆'.repeat(5-(t.rating||5))} ${escapeHtml(t.customer_name)} ${t.published ? '' : '<span style="color:#a13232;font-size:.72rem;">(tersembunyi)</span>'}</h4>
+        <p>${escapeHtml(t.message)}</p>
+      </div>
+      <div class="actions">
+        <button class="mini-btn" data-id="${t.id}" data-published="${t.published}" data-action="toggle-testi">${t.published ? 'Sembunyikan' : 'Tampilkan'}</button>
+        <button class="mini-btn danger" data-id="${t.id}" data-action="del-testi">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-action="toggle-testi"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const newVal = btn.dataset.published === 'true' ? false : true;
+      await supabase.from('testimonials').update({ published: newVal }).eq('id', btn.dataset.id);
+      loadTestimonialsAdmin();
+    });
+  });
+  list.querySelectorAll('[data-action="del-testi"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus testimoni ini?')) return;
+      await supabase.from('testimonials').delete().eq('id', btn.dataset.id);
+      loadTestimonialsAdmin();
+    });
+  });
+}
+
+testiForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('testiSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  testiFormMsg.textContent = '';
+
+  const payload = {
+    customer_name: document.getElementById('testiName').value.trim(),
+    message: document.getElementById('testiMessage').value.trim(),
+    rating: Number(document.getElementById('testiRating').value),
+    published: document.getElementById('testiPublished').checked
+  };
+
+  const { error } = await supabase.from('testimonials').insert([payload]);
+  btn.disabled = false; btn.textContent = 'Simpan Testimoni';
+
+  if (error){
+    testiFormMsg.textContent = 'Gagal menyimpan: ' + error.message;
+    testiFormMsg.style.color = '#a13232';
+    return;
+  }
+  testiFormMsg.textContent = 'Testimoni berhasil ditambahkan.';
+  testiFormMsg.style.color = '#2f7a4f';
+  testiForm.reset();
+  document.getElementById('testiPublished').checked = true;
+  loadTestimonialsAdmin();
+});
+
+/* ================= GALERI ================= */
+const galleryFormMsg = document.getElementById('galleryFormMsg');
+
+async function loadGalleryAdmin(){
+  const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+  const grid = document.getElementById('galleryAdminGrid');
+  if (error){
+    grid.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  if (!data || !data.length){
+    grid.innerHTML = '<p class="empty-state">Belum ada foto.</p>';
+    return;
+  }
+  grid.innerHTML = data.map(g => `
+    <div class="gallery-admin-item">
+      <img src="${g.image_url}" alt="${escapeHtml(g.caption||'')}">
+      ${g.caption ? `<div class="gcap">${escapeHtml(g.caption)}</div>` : ''}
+      <button class="gdel" data-id="${g.id}" data-path="${g.storage_path||''}" title="Hapus">✕</button>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.gdel').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus foto ini?')) return;
+      if (btn.dataset.path) {
+        await supabase.storage.from('gallery').remove([btn.dataset.path]);
+      }
+      await supabase.from('gallery').delete().eq('id', btn.dataset.id);
+      loadGalleryAdmin();
+    });
+  });
+}
+
+document.getElementById('galleryUploadBtn').addEventListener('click', async () => {
+  const fileInput = document.getElementById('galleryFile');
+  const caption = document.getElementById('galleryCaption').value.trim();
+  const btn = document.getElementById('galleryUploadBtn');
+  galleryFormMsg.textContent = '';
+
+  if (!fileInput.files || !fileInput.files[0]){
+    galleryFormMsg.textContent = 'Pilih file foto terlebih dahulu.';
+    galleryFormMsg.style.color = '#a13232';
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const path = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+
+  btn.disabled = true; btn.textContent = 'Mengunggah...';
+
+  try {
+    const { error: upErr } = await supabase.storage.from('gallery').upload(path, file, { upsert: false });
+    if (upErr) throw upErr;
+
+    const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
+    const { error: dbErr } = await supabase.from('gallery').insert([{
+      image_url: pub.publicUrl,
+      storage_path: path,
+      caption: caption
+    }]);
+    if (dbErr) throw dbErr;
+
+    galleryFormMsg.textContent = 'Foto berhasil diunggah.';
+    galleryFormMsg.style.color = '#2f7a4f';
+    fileInput.value = '';
+    document.getElementById('galleryCaption').value = '';
+    loadGalleryAdmin();
+  } catch (err) {
+    console.error(err);
+    galleryFormMsg.textContent = 'Gagal upload: ' + err.message + ' (pastikan bucket storage "gallery" sudah dibuat & bersifat publik di Supabase)';
+    galleryFormMsg.style.color = '#a13232';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Upload';
+  }
 });
 
 checkSession();
