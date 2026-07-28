@@ -9,6 +9,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
   :root{
     --ivory:#FAF6EE;
@@ -1478,6 +1480,8 @@ async function loadInvoicesAdmin(){
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
+        ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Lihat PDF</a>` : ''}
+        <button class="mini-btn" data-id="${inv.id}" data-action="regen-pdf">${inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF'}</button>
         <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
         <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
       </div>
@@ -1489,8 +1493,29 @@ async function loadInvoicesAdmin(){
       const inv = allInvoices.find(x => x.id === btn.dataset.id);
       if (!inv) return;
       if (btn.dataset.action === 'send-invoice') sendInvoiceWhatsApp(inv);
+      if (btn.dataset.action === 'regen-pdf'){
+        btn.disabled = true; btn.textContent = 'Memproses...';
+        try {
+          const pdfRes = await generateInvoicePDF(inv);
+          if (pdfRes && pdfRes.url){
+            await supabase.from('invoices').update({ pdf_url: pdfRes.url, storage_path: pdfRes.path }).eq('id', inv.id);
+            loadInvoicesAdmin();
+          }
+        } catch (err){
+          alert('Gagal membuat PDF: ' + (err.message || err));
+        } finally {
+          btn.disabled = false; btn.textContent = inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF';
+        }
+      }
       if (btn.dataset.action === 'del-invoice'){
         if (!confirm('Hapus invoice ini?')) return;
+        try {
+          if (inv.storage_path){
+            await supabase.storage.from('invoices').remove([inv.storage_path]);
+          }
+        } catch (err) {
+          console.warn('Gagal menghapus file PDF:', err);
+        }
         await supabase.from('invoices').delete().eq('id', inv.id);
         loadInvoicesAdmin();
       }
@@ -1520,7 +1545,8 @@ invoiceForm.addEventListener('submit', async (e) => {
     status: document.getElementById('invStatus').value
   };
 
-  const { error } = await supabase.from('invoices').insert([payload]);
+  // insert and get created row
+  const { data: inserted, error } = await supabase.from('invoices').insert([payload]).select().single();
   btn.disabled = false; btn.textContent = 'Simpan Invoice';
 
   if (error){
@@ -1528,11 +1554,69 @@ invoiceForm.addEventListener('submit', async (e) => {
     invoiceFormMsg.style.color = '#a13232';
     return;
   }
+
+  // try generate PDF and upload to storage; save pdf_url back to invoice
+  try {
+    if (window.html2canvas && window.jspdf){
+      const pdfRes = await generateInvoicePDF(inserted);
+      if (pdfRes && pdfRes.url){
+        await supabase.from('invoices').update({ pdf_url: pdfRes.url }).eq('id', inserted.id);
+      }
+    }
+  } catch (err){
+    console.warn('Gagal membuat/unggah PDF invoice:', err);
+  }
+
   invoiceFormMsg.textContent = 'Invoice tersimpan.';
   invoiceFormMsg.style.color = '#2f7a4f';
   invoiceForm.reset();
   loadInvoicesAdmin();
 });
+
+// generate PDF from invoice data, upload to storage, return public url
+async function generateInvoicePDF(inv){
+  // build a hidden invoice element
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '800px';
+  container.style.background = '#fff';
+  container.style.color = '#000';
+  container.innerHTML = `
+    <div style="padding:28px;font-family:Arial,Helvetica,sans-serif;">
+      <h2 style="margin:0 0 6px;color:#2B241D;">Rozida.Official</h2>
+      <div style="color:#6b6055;margin-bottom:18px;">Invoice: ${inv.id}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:14px;">
+        <tr><td style="padding:6px 0;">Nama</td><td style="padding:6px 0;">${escapeHtml(inv.customer_name)}</td></tr>
+        <tr><td style="padding:6px 0;">WA</td><td style="padding:6px 0;">${escapeHtml(inv.phone)}</td></tr>
+        <tr><td style="padding:6px 0;">Rincian</td><td style="padding:6px 0;">${escapeHtml(inv.description || '')}</td></tr>
+        <tr><td style="padding:6px 0;">Jumlah</td><td style="padding:6px 0;">Rp ${Number(inv.amount||0).toLocaleString('id-ID')}</td></tr>
+        <tr><td style="padding:6px 0;">Status</td><td style="padding:6px 0;">${inv.status}</td></tr>
+      </table>
+      <div style="margin-top:20px;color:#6b6055;">Terima kasih telah memesan di Rozida.Official 🌷</div>
+    </div>`;
+  document.body.appendChild(container);
+
+  try {
+    const canvas = await html2canvas(container, { scale: 2 });
+    const imgData = canvas.toDataURL('image/png');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p','pt','a4');
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    const blob = pdf.output('blob');
+    const path = `invoices/${Date.now()}_${inv.id}.pdf`;
+    // upload
+    const { error: upErr } = await supabase.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
+    const publicUrl = pub.publicUrl;
+    return { url: publicUrl, path };
+  } finally {
+    container.remove();
+  }
 
 function buildInvoiceMessage(inv){
   const lines = [];
@@ -1643,16 +1727,19 @@ financeForm.addEventListener('submit', async (e) => {
 
 async function recordFinanceFromInvoice(inv){
   // Hindari duplikasi: cek apakah sudah ada catatan otomatis untuk invoice ini
-  const { data: existing } = await supabase.from('finance').select('id').eq('invoice_id', inv.id).eq('source', 'invoice');
+  const id = inv.id;
+  const { data: freshInv } = await supabase.from('invoices').select('*').eq('id', id).single();
+  if (!freshInv) return;
+  const { data: existing } = await supabase.from('finance').select('id').eq('invoice_id', id).eq('source', 'invoice');
   if (existing && existing.length) return;
   await supabase.from('finance').insert([{
     date: new Date().toISOString().slice(0, 10),
     type: 'income',
     category: 'Penjualan',
-    description: `Pembayaran invoice ${escapeHtml(inv.customer_name)}`,
-    amount: inv.amount,
+    description: `Pembayaran invoice ${escapeHtml(freshInv.customer_name)}`,
+    amount: freshInv.amount,
     source: 'invoice',
-    invoice_id: inv.id
+    invoice_id: id
   }]);
 }
 
