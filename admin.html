@@ -975,7 +975,15 @@ function normalizePhone(raw) {
 
 function isSettingsSyncSchemaError(err) {
   const message = (err?.message || String(err || '')).toLowerCase();
-  return message.includes('updated_at') || message.includes('record "new"') || message.includes('does not exist');
+  const isSchemaError = message.includes('record "new"')
+    || message.includes('does not exist')
+    || (message.includes('column') && message.includes('does not exist'))
+    || message.includes('relation "settings"');
+
+  if (isSchemaError) {
+    console.warn('Settings sync schema error detected:', err);
+  }
+  return isSchemaError;
 }
 
 const MAX_PAYMENT_ACCOUNTS = 5;
@@ -1199,22 +1207,21 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
 
   btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
 
+  if (remoteError) {
+    if (isSettingsSyncSchemaError(remoteError)) {
+      settingsMsg.textContent = 'Gagal menyimpan pengaturan ke Supabase: skema tabel belum sesuai.';
+    } else {
+      settingsMsg.textContent = 'Gagal menyimpan pengaturan ke Supabase: ' + (remoteError.message || remoteError);
+    }
+    settingsMsg.style.color = '#a13232';
+    return;
+  }
+
   settingsMap = { ...settingsMap, ...settingsPayload };
   notifySync('settings-updated');
   document.getElementById('settingsWaNumber').value = normalized;
   await loadSettingsMap();
   renderInvoiceBankAccountOptions();
-
-  if (remoteError) {
-    if (isSettingsSyncSchemaError(remoteError)) {
-      settingsMsg.textContent = 'Pengaturan tersimpan di browser ini. Sinkronisasi Supabase dilewati karena skema tabel belum sesuai.';
-      settingsMsg.style.color = '#8b6f1f';
-    } else {
-      settingsMsg.textContent = 'Pengaturan tersimpan lokal. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
-      settingsMsg.style.color = '#a13232';
-    }
-    return;
-  }
 
   settingsMsg.textContent = 'Pengaturan berhasil disimpan.';
   settingsMsg.style.color = '#2f7a4f';
