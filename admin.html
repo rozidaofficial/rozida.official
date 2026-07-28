@@ -555,32 +555,11 @@
 
         <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
         <h3 style="font-size:1.02rem;margin-bottom:8px;">Metode Pembayaran</h3>
-        <p class="meta">Isi rekening yang ingin ditampilkan di invoice pelanggan. Bisa lebih dari satu rekening.</p>
+        <p class="meta">Isi rekening yang ingin ditampilkan di invoice pelanggan. Tambah rekening lain bila perlu.</p>
 
-        <div class="field" style="margin-top:8px;">
-          <label>Rekening 1 — Nama Bank</label>
-          <input type="text" id="paymentBankName1" placeholder="Contoh: BCA">
-        </div>
-        <div class="field">
-          <label>Rekening 1 — Nomor Rekening</label>
-          <input type="text" id="paymentBankNumber1" placeholder="Contoh: 1234567890">
-        </div>
-        <div class="field">
-          <label>Rekening 1 — Atas Nama</label>
-          <input type="text" id="paymentBankHolder1" placeholder="Nama pemilik rekening">
-        </div>
-
-        <div class="field" style="margin-top:8px;">
-          <label>Rekening 2 — Nama Bank</label>
-          <input type="text" id="paymentBankName2" placeholder="Contoh: BRI">
-        </div>
-        <div class="field">
-          <label>Rekening 2 — Nomor Rekening</label>
-          <input type="text" id="paymentBankNumber2" placeholder="Contoh: 9876543210">
-        </div>
-        <div class="field">
-          <label>Rekening 2 — Atas Nama</label>
-          <input type="text" id="paymentBankHolder2" placeholder="Nama pemilik rekening">
+        <div id="paymentAccountsContainer"></div>
+        <div class="modal-actions" style="justify-content:flex-start;margin-top:10px;">
+          <button type="button" class="btn btn-outline" id="addPaymentAccountBtn">+ Tambah Rekening</button>
         </div>
 
         <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
@@ -1038,12 +1017,104 @@ function normalizePhone(raw) {
   return digits;
 }
 
+function isSettingsSyncSchemaError(err) {
+  const message = (err?.message || String(err || '')).toLowerCase();
+  return message.includes('updated_at') || message.includes('record "new"') || message.includes('does not exist');
+}
+
+const MAX_PAYMENT_ACCOUNTS = 5;
 const SETTINGS_KEYS = [
   'admin_whatsapp','instagram_url','tiktok_url','facebook_url',
   'payment_bank_name_1','payment_bank_number_1','payment_bank_holder_1',
-  'payment_bank_name_2','payment_bank_number_2','payment_bank_holder_2'
+  'payment_bank_name_2','payment_bank_number_2','payment_bank_holder_2',
+  'payment_bank_name_3','payment_bank_number_3','payment_bank_holder_3',
+  'payment_bank_name_4','payment_bank_number_4','payment_bank_holder_4',
+  'payment_bank_name_5','payment_bank_number_5','payment_bank_holder_5'
 ];
 let settingsMap = {};
+
+function getConfiguredPaymentAccountCount(source = settingsMap) {
+  let count = 1;
+  for (let i = 1; i <= MAX_PAYMENT_ACCOUNTS; i++) {
+    const hasValue = [source[`payment_bank_name_${i}`], source[`payment_bank_number_${i}`], source[`payment_bank_holder_${i}`]].some(Boolean);
+    if (hasValue) count = Math.max(count, i);
+  }
+  return count;
+}
+
+function getPaymentAccountValues() {
+  const values = [];
+  document.querySelectorAll('.payment-account-block').forEach((block) => {
+    const index = Number(block.dataset.index || 1);
+    const bankName = block.querySelector('.payment-bank-name')?.value.trim() || '';
+    const bankNumber = block.querySelector('.payment-bank-number')?.value.trim() || '';
+    const bankHolder = block.querySelector('.payment-bank-holder')?.value.trim() || '';
+    values.push({ index, bankName, bankNumber, bankHolder });
+  });
+  return values;
+}
+
+function renderPaymentAccountsForm() {
+  const container = document.getElementById('paymentAccountsContainer');
+  if (!container) return;
+
+  const currentValues = getPaymentAccountValues();
+  const valuesByIndex = Object.fromEntries(currentValues.map((item) => [item.index, item]));
+  const targetCount = Math.max(1, Math.max(getConfiguredPaymentAccountCount(settingsMap), currentValues.length ? Math.max(...currentValues.map((item) => item.index)) : 0));
+
+  container.innerHTML = '';
+  for (let i = 1; i <= targetCount; i++) {
+    const existing = valuesByIndex[i] || {};
+    const block = document.createElement('div');
+    block.className = 'payment-account-block';
+    block.dataset.index = String(i);
+    block.style.padding = '12px';
+    block.style.border = '1px solid #eee';
+    block.style.borderRadius = '12px';
+    block.style.marginTop = '12px';
+
+    const header = document.createElement('div');
+    header.style.display = 'flex';
+    header.style.justifyContent = 'space-between';
+    header.style.alignItems = 'center';
+    header.style.marginBottom = '8px';
+    const title = document.createElement('strong');
+    title.textContent = `Rekening ${i}`;
+    header.appendChild(title);
+
+    if (i > 1) {
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn btn-outline';
+      removeBtn.style.padding = '6px 10px';
+      removeBtn.style.fontSize = '.8rem';
+      removeBtn.textContent = 'Hapus';
+      removeBtn.addEventListener('click', () => {
+        renderPaymentAccountsForm();
+      });
+      header.appendChild(removeBtn);
+    }
+
+    block.appendChild(header);
+
+    const fieldName = document.createElement('div');
+    fieldName.className = 'field';
+    fieldName.innerHTML = `<label>Nama Bank</label><input type="text" class="payment-bank-name" value="${escapeHtml(existing.bankName || settingsMap[`payment_bank_name_${i}`] || '')}" placeholder="Contoh: BCA">`;
+    block.appendChild(fieldName);
+
+    const fieldNumber = document.createElement('div');
+    fieldNumber.className = 'field';
+    fieldNumber.innerHTML = `<label>Nomor Rekening</label><input type="text" class="payment-bank-number" value="${escapeHtml(existing.bankNumber || settingsMap[`payment_bank_number_${i}`] || '')}" placeholder="Contoh: 1234567890">`;
+    block.appendChild(fieldNumber);
+
+    const fieldHolder = document.createElement('div');
+    fieldHolder.className = 'field';
+    fieldHolder.innerHTML = `<label>Atas Nama</label><input type="text" class="payment-bank-holder" value="${escapeHtml(existing.bankHolder || settingsMap[`payment_bank_holder_${i}`] || '')}" placeholder="Nama pemilik rekening">`;
+    block.appendChild(fieldHolder);
+
+    container.appendChild(block);
+  }
+}
 
 async function loadSettingsMap(){
   const fallbackSettings = getLocalSettings();
@@ -1074,13 +1145,21 @@ async function populateSettingsForm(){
   document.getElementById('settingsInstagram').value = settingsMap.instagram_url || '';
   document.getElementById('settingsTiktok').value = settingsMap.tiktok_url || '';
   document.getElementById('settingsFacebook').value = settingsMap.facebook_url || '';
-  document.getElementById('paymentBankName1').value = settingsMap.payment_bank_name_1 || '';
-  document.getElementById('paymentBankNumber1').value = settingsMap.payment_bank_number_1 || '';
-  document.getElementById('paymentBankHolder1').value = settingsMap.payment_bank_holder_1 || '';
-  document.getElementById('paymentBankName2').value = settingsMap.payment_bank_name_2 || '';
-  document.getElementById('paymentBankNumber2').value = settingsMap.payment_bank_number_2 || '';
-  document.getElementById('paymentBankHolder2').value = settingsMap.payment_bank_holder_2 || '';
+  renderPaymentAccountsForm();
 }
+
+document.getElementById('addPaymentAccountBtn').addEventListener('click', () => {
+  const currentValues = getPaymentAccountValues();
+  const nextIndex = currentValues.length ? Math.max(...currentValues.map((item) => item.index)) + 1 : 2;
+  if (nextIndex > MAX_PAYMENT_ACCOUNTS) return;
+  const container = document.getElementById('paymentAccountsContainer');
+  if (!container) return;
+  renderPaymentAccountsForm();
+  const blocks = document.querySelectorAll('.payment-account-block');
+  if (blocks.length < nextIndex) {
+    renderPaymentAccountsForm();
+  }
+});
 
 document.getElementById('settingsBtn').addEventListener('click', async () => {
   const settingsTabBtn = document.querySelector('.tab-btn[data-tab="tabPengaturan"]');
@@ -1106,25 +1185,27 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   const instagram = document.getElementById('settingsInstagram').value.trim();
   const tiktok = document.getElementById('settingsTiktok').value.trim();
   const facebook = document.getElementById('settingsFacebook').value.trim();
-  const bankName1 = document.getElementById('paymentBankName1').value.trim();
-  const bankNumber1 = document.getElementById('paymentBankNumber1').value.trim();
-  const bankHolder1 = document.getElementById('paymentBankHolder1').value.trim();
-  const bankName2 = document.getElementById('paymentBankName2').value.trim();
-  const bankNumber2 = document.getElementById('paymentBankNumber2').value.trim();
-  const bankHolder2 = document.getElementById('paymentBankHolder2').value.trim();
+  const accounts = getPaymentAccountValues();
 
   const settingsPayload = {
     admin_whatsapp: normalized,
     instagram_url: instagram,
     tiktok_url: tiktok,
-    facebook_url: facebook,
-    payment_bank_name_1: bankName1,
-    payment_bank_number_1: bankNumber1,
-    payment_bank_holder_1: bankHolder1,
-    payment_bank_name_2: bankName2,
-    payment_bank_number_2: bankNumber2,
-    payment_bank_holder_2: bankHolder2
+    facebook_url: facebook
   };
+
+  accounts.forEach((account, index) => {
+    const slot = index + 1;
+    settingsPayload[`payment_bank_name_${slot}`] = account.bankName;
+    settingsPayload[`payment_bank_number_${slot}`] = account.bankNumber;
+    settingsPayload[`payment_bank_holder_${slot}`] = account.bankHolder;
+  });
+
+  for (let i = accounts.length + 1; i <= MAX_PAYMENT_ACCOUNTS; i++) {
+    settingsPayload[`payment_bank_name_${i}`] = '';
+    settingsPayload[`payment_bank_number_${i}`] = '';
+    settingsPayload[`payment_bank_holder_${i}`] = '';
+  }
 
   let remoteError = null;
   try {
@@ -1145,8 +1226,13 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   await loadSettingsMap();
 
   if (remoteError) {
-    settingsMsg.textContent = 'Pengaturan tersimpan lokal dan akan dipakai di browser ini. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
-    settingsMsg.style.color = '#a13232';
+    if (isSettingsSyncSchemaError(remoteError)) {
+      settingsMsg.textContent = 'Pengaturan tersimpan di browser ini. Sinkronisasi Supabase dilewati karena skema tabel belum sesuai.';
+      settingsMsg.style.color = '#8b6f1f';
+    } else {
+      settingsMsg.textContent = 'Pengaturan tersimpan lokal. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
+      settingsMsg.style.color = '#a13232';
+    }
     return;
   }
 
