@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --ivory:#FAF6EE;
@@ -246,6 +247,8 @@
       <button class="tab-btn" data-tab="tabKalender">Kalender</button>
       <button class="tab-btn" data-tab="tabTestimoni">Testimoni</button>
       <button class="tab-btn" data-tab="tabGallery">Galeri</button>
+      <button class="tab-btn" data-tab="tabInvoice">Invoice</button>
+      <button class="tab-btn" data-tab="tabKeuangan">Keuangan</button>
     </div>
 
     <!-- ===== TAB PESANAN ===== -->
@@ -384,6 +387,103 @@
         <div class="gallery-admin-grid" id="galleryAdminGrid"></div>
       </div>
     </div>
+
+    <!-- ===== TAB INVOICE ===== -->
+    <div class="tab-panel" id="tabInvoice">
+      <div class="panel-card">
+        <h3>Buat Invoice Baru</h3>
+        <form id="invoiceForm" class="inline-form">
+          <div class="field">
+            <label>Pesanan Terkait (opsional)</label>
+            <select id="invOrderPicker"><option value="">— Tidak terhubung ke pesanan —</option></select>
+          </div>
+          <div class="field">
+            <label>Nama Pelanggan</label>
+            <input type="text" id="invCustomerName" required placeholder="Nama pelanggan">
+          </div>
+          <div class="field">
+            <label>No. WhatsApp Pelanggan</label>
+            <input type="text" id="invPhone" required placeholder="08xxxxxxxxxx">
+          </div>
+          <div class="field">
+            <label>Rincian / Layanan</label>
+            <input type="text" id="invDesc" placeholder="Contoh: Buket wisuda + kartu ucapan">
+          </div>
+          <div class="field">
+            <label>Harga (Rp)</label>
+            <input type="number" id="invAmount" required placeholder="0">
+          </div>
+          <div class="field">
+            <label>Status Pembayaran</label>
+            <select id="invStatus">
+              <option value="unpaid">Belum Lunas</option>
+              <option value="paid">Lunas</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn" style="width:100%;">Simpan Invoice</button>
+        </form>
+        <div id="invoiceFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
+      </div>
+
+      <div class="panel-card" style="margin-top:16px;">
+        <h3>Daftar Invoice</h3>
+        <div id="invoiceAdminList"><p class="empty-state">Memuat...</p></div>
+      </div>
+    </div>
+
+    <!-- ===== TAB KEUANGAN ===== -->
+    <div class="tab-panel" id="tabKeuangan">
+      <div class="stats" style="margin-bottom:16px;">
+        <div class="stat-card"><div class="num" id="finIn">Rp 0</div><div class="lbl">Total Pemasukan</div></div>
+        <div class="stat-card"><div class="num" id="finOut">Rp 0</div><div class="lbl">Total Pengeluaran</div></div>
+        <div class="stat-card"><div class="num" id="finSaldo">Rp 0</div><div class="lbl">Saldo</div></div>
+      </div>
+
+      <div class="panel-card">
+        <h3>Tambah Catatan Keuangan Manual</h3>
+        <form id="financeForm" class="inline-form">
+          <div class="field">
+            <label>Tanggal</label>
+            <input type="date" id="finDate" required>
+          </div>
+          <div class="field">
+            <label>Jenis</label>
+            <select id="finType">
+              <option value="income">Pemasukan</option>
+              <option value="expense">Pengeluaran</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Kategori</label>
+            <input type="text" id="finCategory" placeholder="Contoh: Bahan baku, Ongkir, dsb.">
+          </div>
+          <div class="field">
+            <label>Keterangan</label>
+            <input type="text" id="finDesc" placeholder="Keterangan singkat">
+          </div>
+          <div class="field">
+            <label>Jumlah (Rp)</label>
+            <input type="number" id="finAmount" required placeholder="0">
+          </div>
+          <button type="submit" class="btn btn-primary" id="financeSubmitBtn" style="width:100%;">Simpan Catatan</button>
+        </form>
+        <div id="financeFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
+      </div>
+
+      <div class="panel-card" style="margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <h3 style="margin:0;">Riwayat Keuangan</h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline" id="downloadRekapBtn">Unduh Rekap Excel</button>
+            <label class="btn btn-outline" style="cursor:pointer;margin:0;">
+              Import Pesanan (Excel)
+              <input type="file" id="importOrdersFile" accept=".xlsx,.xls,.csv" style="display:none;">
+            </label>
+          </div>
+        </div>
+        <div id="financeList"><p class="empty-state">Memuat...</p></div>
+      </div>
+    </div>
   </main>
 </div>
 
@@ -457,10 +557,62 @@
       <input type="text" id="settingsFacebook" placeholder="https://facebook.com/rozida.official">
     </div>
 
+    <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
+    <h2 style="font-size:1.02rem;">Metode Pembayaran</h2>
+    <p class="meta">Pilih metode yang ingin ditampilkan di invoice pelanggan.</p>
+
+    <label class="toggle-pill"><input type="checkbox" id="paymentQrisEnabled"> Aktifkan QRIS</label>
+    <div class="field" style="margin-top:8px;">
+      <label>Gambar QRIS (opsional, untuk ditampilkan/upload ulang)</label>
+      <input type="file" id="paymentQrisFile" accept="image/*">
+      <div id="paymentQrisPreviewWrap" style="margin-top:8px;display:none;">
+        <img id="paymentQrisPreview" src="" alt="QRIS" style="max-width:160px;border-radius:8px;border:1px solid #eee;">
+      </div>
+    </div>
+
+    <label class="toggle-pill" style="margin-top:14px;"><input type="checkbox" id="paymentBankEnabled"> Aktifkan Transfer Bank</label>
+    <div class="field" style="margin-top:8px;">
+      <label>Nama Bank</label>
+      <input type="text" id="paymentBankName" placeholder="Contoh: BCA">
+    </div>
+    <div class="field">
+      <label>Nomor Rekening</label>
+      <input type="text" id="paymentBankNumber" placeholder="Contoh: 1234567890">
+    </div>
+    <div class="field">
+      <label>Atas Nama</label>
+      <input type="text" id="paymentBankHolder" placeholder="Nama pemilik rekening">
+    </div>
+
     <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
 
     <div class="modal-actions" style="justify-content:flex-end;">
       <button class="btn btn-primary" id="saveSettingsBtn">Simpan Pengaturan</button>
+    </div>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
+    <h2 style="font-size:1.02rem;">Akun Admin</h2>
+    <p class="meta">Ubah email atau kata sandi login admin.</p>
+
+    <div class="field">
+      <label>Email Baru</label>
+      <input type="email" id="accountNewEmail" placeholder="email@baru.com">
+    </div>
+    <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
+      <button class="btn btn-outline" id="changeEmailBtn">Ubah Email</button>
+    </div>
+
+    <div class="field" style="margin-top:14px;">
+      <label>Kata Sandi Baru</label>
+      <input type="password" id="accountNewPassword" placeholder="Minimal 6 karakter">
+    </div>
+    <div class="field">
+      <label>Ulangi Kata Sandi Baru</label>
+      <input type="password" id="accountNewPasswordConfirm" placeholder="Ulangi kata sandi baru">
+    </div>
+    <div id="accountMsg" style="font-size:.82rem;margin-bottom:6px;min-height:18px;"></div>
+    <div class="modal-actions" style="justify-content:flex-end;margin-top:0;">
+      <button class="btn btn-outline" id="changePasswordBtn">Ubah Kata Sandi</button>
     </div>
   </div>
 </div>
@@ -501,6 +653,8 @@ function showDashboard(user){
   loadAgendaAdmin();
   loadTestimonialsAdmin();
   loadGalleryAdmin();
+  loadInvoicesAdmin();
+  loadFinanceAdmin();
 }
 
 /* ---------- TABS ---------- */
@@ -564,6 +718,16 @@ async function loadOrders(){
   allOrders = data || [];
   renderStats();
   renderTable();
+  populateOrderPicker();
+}
+
+function populateOrderPicker(){
+  const picker = document.getElementById('invOrderPicker');
+  if (!picker) return;
+  const current = picker.value;
+  picker.innerHTML = '<option value="">— Tidak terhubung ke pesanan —</option>' +
+    allOrders.map(o => `<option value="${o.id}">${escapeHtml(o.customer_name)} — ${escapeHtml(o.service_type || '')}</option>`).join('');
+  picker.value = current;
 }
 
 function subscribeRealtime(){
@@ -727,16 +891,41 @@ function normalizePhone(raw) {
   return digits;
 }
 
+const SETTINGS_KEYS = [
+  'admin_whatsapp','instagram_url','tiktok_url','facebook_url',
+  'payment_qris_enabled','payment_qris_image','payment_bank_enabled',
+  'payment_bank_name','payment_bank_number','payment_bank_holder'
+];
+let settingsMap = {};
+
+async function loadSettingsMap(){
+  const { data } = await supabase.from('settings').select('key,value').in('key', SETTINGS_KEYS);
+  settingsMap = {};
+  (data || []).forEach(d => settingsMap[d.key] = d.value);
+  return settingsMap;
+}
+
 document.getElementById('settingsBtn').addEventListener('click', async () => {
   settingsMsg.textContent = '';
-  const { data } = await supabase.from('settings').select('key,value')
-    .in('key', ['admin_whatsapp','instagram_url','tiktok_url','facebook_url']);
-  const map = {};
-  (data || []).forEach(d => map[d.key] = d.value);
-  document.getElementById('settingsWaNumber').value = map.admin_whatsapp || '';
-  document.getElementById('settingsInstagram').value = map.instagram_url || '';
-  document.getElementById('settingsTiktok').value = map.tiktok_url || '';
-  document.getElementById('settingsFacebook').value = map.facebook_url || '';
+  document.getElementById('accountMsg').textContent = '';
+  await loadSettingsMap();
+  document.getElementById('settingsWaNumber').value = settingsMap.admin_whatsapp || '';
+  document.getElementById('settingsInstagram').value = settingsMap.instagram_url || '';
+  document.getElementById('settingsTiktok').value = settingsMap.tiktok_url || '';
+  document.getElementById('settingsFacebook').value = settingsMap.facebook_url || '';
+  document.getElementById('paymentQrisEnabled').checked = settingsMap.payment_qris_enabled === 'true';
+  document.getElementById('paymentBankEnabled').checked = settingsMap.payment_bank_enabled === 'true';
+  document.getElementById('paymentBankName').value = settingsMap.payment_bank_name || '';
+  document.getElementById('paymentBankNumber').value = settingsMap.payment_bank_number || '';
+  document.getElementById('paymentBankHolder').value = settingsMap.payment_bank_holder || '';
+  const qrisPreview = document.getElementById('paymentQrisPreview');
+  const qrisWrap = document.getElementById('paymentQrisPreviewWrap');
+  if (settingsMap.payment_qris_image){
+    qrisPreview.src = settingsMap.payment_qris_image;
+    qrisWrap.style.display = 'block';
+  } else {
+    qrisWrap.style.display = 'none';
+  }
   settingsOverlay.classList.add('show');
 });
 
@@ -761,6 +950,27 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   const instagram = document.getElementById('settingsInstagram').value.trim();
   const tiktok = document.getElementById('settingsTiktok').value.trim();
   const facebook = document.getElementById('settingsFacebook').value.trim();
+  const qrisEnabled = document.getElementById('paymentQrisEnabled').checked;
+  const bankEnabled = document.getElementById('paymentBankEnabled').checked;
+  const bankName = document.getElementById('paymentBankName').value.trim();
+  const bankNumber = document.getElementById('paymentBankNumber').value.trim();
+  const bankHolder = document.getElementById('paymentBankHolder').value.trim();
+
+  // Upload gambar QRIS baru jika dipilih
+  let qrisImageUrl = settingsMap.payment_qris_image || '';
+  const qrisFile = document.getElementById('paymentQrisFile').files[0];
+  if (qrisFile){
+    const path = `qris/${Date.now()}_${qrisFile.name}`;
+    const { error: upErr } = await supabase.storage.from('gallery').upload(path, qrisFile, { upsert: false });
+    if (upErr){
+      settingsMsg.textContent = 'Gagal upload QRIS: ' + upErr.message;
+      settingsMsg.style.color = '#a13232';
+      btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
+      return;
+    }
+    const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
+    qrisImageUrl = pub.publicUrl;
+  }
 
   const { error } = await supabase
     .from('settings')
@@ -768,7 +978,13 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
       { key: 'admin_whatsapp', value: normalized },
       { key: 'instagram_url', value: instagram },
       { key: 'tiktok_url', value: tiktok },
-      { key: 'facebook_url', value: facebook }
+      { key: 'facebook_url', value: facebook },
+      { key: 'payment_qris_enabled', value: String(qrisEnabled) },
+      { key: 'payment_qris_image', value: qrisImageUrl },
+      { key: 'payment_bank_enabled', value: String(bankEnabled) },
+      { key: 'payment_bank_name', value: bankName },
+      { key: 'payment_bank_number', value: bankNumber },
+      { key: 'payment_bank_holder', value: bankHolder }
     ], { onConflict: 'key' });
 
   btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
@@ -782,6 +998,60 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   settingsMsg.textContent = 'Pengaturan berhasil disimpan.';
   settingsMsg.style.color = '#2f7a4f';
   document.getElementById('settingsWaNumber').value = normalized;
+  await loadSettingsMap();
+});
+
+/* ---------- AKUN ADMIN: ubah email & kata sandi ---------- */
+document.getElementById('changeEmailBtn').addEventListener('click', async () => {
+  const accountMsg = document.getElementById('accountMsg');
+  accountMsg.style.color = '';
+  const newEmail = document.getElementById('accountNewEmail').value.trim();
+  if (!newEmail){
+    accountMsg.textContent = 'Isi email baru terlebih dahulu.';
+    accountMsg.style.color = '#a13232';
+    return;
+  }
+  const btn = document.getElementById('changeEmailBtn');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  const { error } = await supabase.auth.updateUser({ email: newEmail });
+  btn.disabled = false; btn.textContent = 'Ubah Email';
+  if (error){
+    accountMsg.textContent = 'Gagal mengubah email: ' + error.message;
+    accountMsg.style.color = '#a13232';
+    return;
+  }
+  accountMsg.textContent = 'Cek email lama & baru untuk konfirmasi perubahan email.';
+  accountMsg.style.color = '#2f7a4f';
+});
+
+document.getElementById('changePasswordBtn').addEventListener('click', async () => {
+  const accountMsg = document.getElementById('accountMsg');
+  accountMsg.style.color = '';
+  const pw1 = document.getElementById('accountNewPassword').value;
+  const pw2 = document.getElementById('accountNewPasswordConfirm').value;
+  if (!pw1 || pw1.length < 6){
+    accountMsg.textContent = 'Kata sandi minimal 6 karakter.';
+    accountMsg.style.color = '#a13232';
+    return;
+  }
+  if (pw1 !== pw2){
+    accountMsg.textContent = 'Konfirmasi kata sandi tidak sama.';
+    accountMsg.style.color = '#a13232';
+    return;
+  }
+  const btn = document.getElementById('changePasswordBtn');
+  btn.disabled = true; btn.textContent = 'Memproses...';
+  const { error } = await supabase.auth.updateUser({ password: pw1 });
+  btn.disabled = false; btn.textContent = 'Ubah Kata Sandi';
+  if (error){
+    accountMsg.textContent = 'Gagal mengubah kata sandi: ' + error.message;
+    accountMsg.style.color = '#a13232';
+    return;
+  }
+  accountMsg.textContent = 'Kata sandi berhasil diubah.';
+  accountMsg.style.color = '#2f7a4f';
+  document.getElementById('accountNewPassword').value = '';
+  document.getElementById('accountNewPasswordConfirm').value = '';
 });
 
 /* ================= KALENDER / AGENDA ================= */
@@ -994,6 +1264,311 @@ document.getElementById('galleryUploadBtn').addEventListener('click', async () =
     galleryFormMsg.style.color = '#a13232';
   } finally {
     btn.disabled = false; btn.textContent = 'Upload';
+  }
+});
+
+/* ================= INVOICE ================= */
+const invoiceForm = document.getElementById('invoiceForm');
+const invoiceFormMsg = document.getElementById('invoiceFormMsg');
+let allInvoices = [];
+
+document.getElementById('invOrderPicker').addEventListener('change', (e) => {
+  const o = allOrders.find(x => x.id === e.target.value);
+  if (!o) return;
+  document.getElementById('invCustomerName').value = o.customer_name || '';
+  document.getElementById('invPhone').value = o.phone || '';
+  document.getElementById('invDesc').value = o.service_type || o.package_detail || '';
+  if (o.price) document.getElementById('invAmount').value = o.price;
+});
+
+async function loadInvoicesAdmin(){
+  const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+  const list = document.getElementById('invoiceAdminList');
+  if (error){
+    list.innerHTML = `<p class="empty-state">Gagal memuat invoice (pastikan tabel "invoices" sudah dibuat di Supabase): ${escapeHtml(error.message)}</p>`;
+    allInvoices = [];
+    return;
+  }
+  allInvoices = data || [];
+  if (!allInvoices.length){
+    list.innerHTML = '<p class="empty-state">Belum ada invoice.</p>';
+    return;
+  }
+  list.innerHTML = allInvoices.map(inv => `
+    <div class="list-row">
+      <div class="info">
+        <h4>${escapeHtml(inv.customer_name)} — Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}
+          ${inv.status === 'paid' ? '<span style="color:#2f7a4f;font-size:.72rem;">(Lunas)</span>' : '<span style="color:#a13232;font-size:.72rem;">(Belum Lunas)</span>'}
+        </h4>
+        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}</p>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
+        <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
+        <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const inv = allInvoices.find(x => x.id === btn.dataset.id);
+      if (!inv) return;
+      if (btn.dataset.action === 'send-invoice') sendInvoiceWhatsApp(inv);
+      if (btn.dataset.action === 'del-invoice'){
+        if (!confirm('Hapus invoice ini?')) return;
+        await supabase.from('invoices').delete().eq('id', inv.id);
+        loadInvoicesAdmin();
+      }
+      if (btn.dataset.action === 'toggle-invoice-status'){
+        const newStatus = inv.status === 'paid' ? 'unpaid' : 'paid';
+        await supabase.from('invoices').update({ status: newStatus }).eq('id', inv.id);
+        if (newStatus === 'paid') await recordFinanceFromInvoice(inv);
+        loadInvoicesAdmin();
+        loadFinanceAdmin();
+      }
+    });
+  });
+}
+
+invoiceForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('invoiceSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  invoiceFormMsg.textContent = '';
+
+  const payload = {
+    order_id: document.getElementById('invOrderPicker').value || null,
+    customer_name: document.getElementById('invCustomerName').value.trim(),
+    phone: document.getElementById('invPhone').value.trim(),
+    description: document.getElementById('invDesc').value.trim(),
+    amount: Number(document.getElementById('invAmount').value || 0),
+    status: document.getElementById('invStatus').value
+  };
+
+  const { error } = await supabase.from('invoices').insert([payload]);
+  btn.disabled = false; btn.textContent = 'Simpan Invoice';
+
+  if (error){
+    invoiceFormMsg.textContent = 'Gagal menyimpan invoice: ' + error.message;
+    invoiceFormMsg.style.color = '#a13232';
+    return;
+  }
+  invoiceFormMsg.textContent = 'Invoice tersimpan.';
+  invoiceFormMsg.style.color = '#2f7a4f';
+  invoiceForm.reset();
+  loadInvoicesAdmin();
+});
+
+function buildInvoiceMessage(inv){
+  const lines = [];
+  lines.push(`Halo ${inv.customer_name}, berikut invoice pesanan Anda:`);
+  if (inv.description) lines.push(`Rincian: ${inv.description}`);
+  lines.push(`Total: Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}`);
+  lines.push(`Status: ${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}`);
+  if (inv.status !== 'paid'){
+    lines.push('');
+    lines.push('Pembayaran dapat dilakukan melalui:');
+    if (settingsMap.payment_qris_enabled === 'true'){
+      lines.push('- QRIS (scan kode yang kami kirimkan / lihat lampiran)');
+    }
+    if (settingsMap.payment_bank_enabled === 'true'){
+      lines.push(`- Transfer Bank ${settingsMap.payment_bank_name || ''} No. Rek ${settingsMap.payment_bank_number || ''} a.n ${settingsMap.payment_bank_holder || ''}`);
+    }
+  }
+  lines.push('');
+  lines.push('Terima kasih telah memesan di Rozida.Official 🌷');
+  return lines.join('\n');
+}
+
+async function sendInvoiceWhatsApp(inv){
+  await loadSettingsMap();
+  const phoneClean = (inv.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
+  const msg = encodeURIComponent(buildInvoiceMessage(inv));
+  window.open(`https://wa.me/${phoneClean}?text=${msg}`, '_blank');
+}
+
+/* ================= KEUANGAN ================= */
+const financeForm = document.getElementById('financeForm');
+const financeFormMsg = document.getElementById('financeFormMsg');
+let allFinance = [];
+
+async function loadFinanceAdmin(){
+  const { data, error } = await supabase.from('finance').select('*').order('date', { ascending: false });
+  const list = document.getElementById('financeList');
+  if (error){
+    list.innerHTML = `<p class="empty-state">Gagal memuat keuangan (pastikan tabel "finance" sudah dibuat di Supabase): ${escapeHtml(error.message)}</p>`;
+    allFinance = [];
+    renderFinanceSummary();
+    return;
+  }
+  allFinance = data || [];
+  renderFinanceSummary();
+
+  if (!allFinance.length){
+    list.innerHTML = '<p class="empty-state">Belum ada catatan keuangan.</p>';
+    return;
+  }
+  list.innerHTML = allFinance.map(f => `
+    <div class="list-row">
+      <div class="info">
+        <h4 style="color:${f.type === 'income' ? '#2f7a4f' : '#a13232'};">
+          ${f.type === 'income' ? '+' : '-'} Rp ${Number(f.amount || 0).toLocaleString('id-ID')} — ${escapeHtml(f.category || '')}
+        </h4>
+        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${formatDateOnly(f.date)} · ${escapeHtml(f.description || '')} ${f.source === 'invoice' ? '(otomatis dari invoice)' : ''}</p>
+      </div>
+      <button class="mini-btn danger" data-id="${f.id}" data-action="del-finance">Hapus</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('button[data-action="del-finance"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Hapus catatan keuangan ini?')) return;
+      await supabase.from('finance').delete().eq('id', btn.dataset.id);
+      loadFinanceAdmin();
+    });
+  });
+}
+
+function renderFinanceSummary(){
+  const totalIn = allFinance.filter(f => f.type === 'income').reduce((s, f) => s + Number(f.amount || 0), 0);
+  const totalOut = allFinance.filter(f => f.type === 'expense').reduce((s, f) => s + Number(f.amount || 0), 0);
+  document.getElementById('finIn').textContent = 'Rp ' + totalIn.toLocaleString('id-ID');
+  document.getElementById('finOut').textContent = 'Rp ' + totalOut.toLocaleString('id-ID');
+  document.getElementById('finSaldo').textContent = 'Rp ' + (totalIn - totalOut).toLocaleString('id-ID');
+}
+
+financeForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('financeSubmitBtn');
+  btn.disabled = true; btn.textContent = 'Menyimpan...';
+  financeFormMsg.textContent = '';
+
+  const payload = {
+    date: document.getElementById('finDate').value,
+    type: document.getElementById('finType').value,
+    category: document.getElementById('finCategory').value.trim(),
+    description: document.getElementById('finDesc').value.trim(),
+    amount: Number(document.getElementById('finAmount').value || 0),
+    source: 'manual'
+  };
+
+  const { error } = await supabase.from('finance').insert([payload]);
+  btn.disabled = false; btn.textContent = 'Simpan Catatan';
+
+  if (error){
+    financeFormMsg.textContent = 'Gagal menyimpan: ' + error.message;
+    financeFormMsg.style.color = '#a13232';
+    return;
+  }
+  financeFormMsg.textContent = 'Catatan keuangan tersimpan.';
+  financeFormMsg.style.color = '#2f7a4f';
+  financeForm.reset();
+  loadFinanceAdmin();
+});
+
+async function recordFinanceFromInvoice(inv){
+  // Hindari duplikasi: cek apakah sudah ada catatan otomatis untuk invoice ini
+  const { data: existing } = await supabase.from('finance').select('id').eq('invoice_id', inv.id).eq('source', 'invoice');
+  if (existing && existing.length) return;
+  await supabase.from('finance').insert([{
+    date: new Date().toISOString().slice(0, 10),
+    type: 'income',
+    category: 'Penjualan',
+    description: `Pembayaran invoice ${escapeHtml(inv.customer_name)}`,
+    amount: inv.amount,
+    source: 'invoice',
+    invoice_id: inv.id
+  }]);
+}
+
+/* ================= UNDUH REKAP EXCEL ================= */
+document.getElementById('downloadRekapBtn').addEventListener('click', () => {
+  if (typeof XLSX === 'undefined'){
+    alert('Library Excel belum termuat, cek koneksi internet lalu coba lagi.');
+    return;
+  }
+  const wb = XLSX.utils.book_new();
+
+  const ordersSheet = XLSX.utils.json_to_sheet((allOrders || []).map(o => ({
+    Tanggal: o.created_at, Nama: o.customer_name, WhatsApp: o.phone, Layanan: o.service_type,
+    TanggalAcara: o.event_date, Status: o.status, Harga: o.price, Alamat: o.address, Catatan: o.notes
+  })));
+  XLSX.utils.book_append_sheet(wb, ordersSheet, 'Pesanan');
+
+  const invoiceSheet = XLSX.utils.json_to_sheet((allInvoices || []).map(inv => ({
+    Tanggal: inv.created_at, Nama: inv.customer_name, WhatsApp: inv.phone,
+    Rincian: inv.description, Jumlah: inv.amount, Status: inv.status
+  })));
+  XLSX.utils.book_append_sheet(wb, invoiceSheet, 'Invoice');
+
+  const financeSheet = XLSX.utils.json_to_sheet((allFinance || []).map(f => ({
+    Tanggal: f.date, Jenis: f.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+    Kategori: f.category, Keterangan: f.description, Jumlah: f.amount, Sumber: f.source
+  })));
+  XLSX.utils.book_append_sheet(wb, financeSheet, 'Keuangan');
+
+  XLSX.writeFile(wb, `Rekap-RozidaOfficial-${new Date().toISOString().slice(0,10)}.xlsx`);
+});
+
+/* ================= IMPORT PESANAN DARI EXCEL ================= */
+document.getElementById('importOrdersFile').addEventListener('change', async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (typeof XLSX === 'undefined'){
+    alert('Library Excel belum termuat, cek koneksi internet lalu coba lagi.');
+    return;
+  }
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data);
+    const firstSheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+    if (!rows.length){
+      alert('File Excel kosong atau format tidak dikenali.');
+      return;
+    }
+
+    // Kolom yang dicari (tidak case-sensitive): Nama, WhatsApp, Layanan, TanggalAcara, Status, Harga, Alamat, Catatan
+    const mapped = rows.map(r => {
+      const get = (...keys) => {
+        for (const k of Object.keys(r)){
+          if (keys.some(x => x.toLowerCase() === k.toLowerCase())) return r[k];
+        }
+        return undefined;
+      };
+      return {
+        customer_name: get('Nama','customer_name') || '',
+        phone: String(get('WhatsApp','phone') || ''),
+        service_type: get('Layanan','service_type') || '',
+        event_date: get('TanggalAcara','event_date') || null,
+        status: get('Status','status') || 'Baru',
+        price: get('Harga','price') ? Number(get('Harga','price')) : null,
+        address: get('Alamat','address') || '',
+        notes: get('Catatan','notes') || ''
+      };
+    }).filter(r => r.customer_name);
+
+    if (!mapped.length){
+      alert('Tidak ada baris valid (kolom "Nama" wajib diisi).');
+      return;
+    }
+
+    if (!confirm(`Import ${mapped.length} pesanan dari file ini?`)) return;
+
+    const { error } = await supabase.from('orders').insert(mapped);
+    if (error){
+      alert('Gagal import: ' + error.message);
+      return;
+    }
+    alert(`Berhasil import ${mapped.length} pesanan.`);
+    loadOrders();
+  } catch (err){
+    console.error(err);
+    alert('Gagal membaca file Excel: ' + err.message);
+  } finally {
+    e.target.value = '';
   }
 });
 
