@@ -854,6 +854,7 @@ let allAgenda = [];
 let selectedAgendaDate = null;
 
 async function loadAgenda(){
+  console.log('[debug] loadAgenda() start');
   try {
     const [{ data: agData, error: agErr }, { data: ordData, error: ordErr }] = await Promise.all([
       supabase.from('agenda').select('*').order('event_date', { ascending: true }),
@@ -861,6 +862,7 @@ async function loadAgenda(){
     ]);
     if (agErr) console.error('Agenda error', agErr);
     if (ordErr) console.error('Orders error', ordErr);
+    console.log('[debug] ag items', (agData || []).length, 'orders with date', (ordData || []).length);
     const ag = agData || [];
     const ord = (ordData || []).filter(o => o.event_date && o.status !== 'Dibatalkan');
     // merge items: agenda entries + orders with event_date
@@ -906,9 +908,13 @@ function renderCalendar(){
   }
   grid.innerHTML = html;
   // attach click handlers to show agenda list for a date
-  grid.querySelectorAll('.day[data-date]').forEach(cell => {
+  const clickable = grid.querySelectorAll('.day[data-date]');
+  console.log('[debug] renderCalendar() created', clickable.length, 'clickable day cells');
+  clickable.forEach(cell => {
     cell.addEventListener('click', () => {
-      selectedAgendaDate = cell.getAttribute('data-date');
+      const d = cell.getAttribute('data-date');
+      console.log('[debug] day clicked', d);
+      selectedAgendaDate = d;
       renderAgendaList();
     });
   });
