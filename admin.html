@@ -440,9 +440,12 @@
             <label>Harga (Rp)</label>
             <input type="number" id="invAmount" required placeholder="0">
           </div>
-          <div class="field" style="grid-column:span 2;">
+          <div class="field">
             <label>Rekening Invoice</label>
-            <div class="meta">Rekening akan otomatis diambil dari pengaturan Metode Pembayaran di tab Pengaturan.</div>
+            <select id="invBankAccountSelect">
+              <option value="">Gunakan rekening default dari pengaturan</option>
+            </select>
+            <div class="meta" id="invBankAccountHint">Pilih rekening khusus untuk invoice ini bila perlu.</div>
           </div>
           <div class="field">
             <label>Status Pembayaran</label>
@@ -450,6 +453,14 @@
               <option value="unpaid">Belum Lunas</option>
               <option value="paid">Lunas</option>
             </select>
+          </div>
+          <div class="field" style="grid-column:span 2;">
+            <label style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="invIncludeQris" style="width:auto;">
+              <span>Tambahkan QRIS ke invoice</span>
+            </label>
+            <input type="file" id="invQrisFile" accept="image/*" style="display:none;margin-top:8px;">
+            <div class="meta">Unggah QRIS bila ingin ditampilkan di invoice dan pesan WhatsApp.</div>
           </div>
           <button type="submit" class="btn btn-primary" id="invoiceSubmitBtn" style="width:100%;">Simpan Invoice</button>
         </form>
@@ -739,6 +750,7 @@ function showDashboard(user){
   renderStats();
   renderTable();
   populateOrderPicker();
+  loadSettingsMap();
   loadOrders();
   subscribeRealtime();
   loadAgendaAdmin();
@@ -1137,6 +1149,22 @@ async function loadSettingsMap(){
   return settingsMap;
 }
 
+function renderInvoiceBankAccountOptions() {
+  const select = document.getElementById('invBankAccountSelect');
+  if (!select) return;
+  const options = [];
+  for (let i = 1; i <= MAX_PAYMENT_ACCOUNTS; i++) {
+    const name = settingsMap[`payment_bank_name_${i}`] || '';
+    const number = settingsMap[`payment_bank_number_${i}`] || '';
+    const holder = settingsMap[`payment_bank_holder_${i}`] || '';
+    if (name || number || holder) {
+      const label = [name, number, holder].filter(Boolean).join(' • ');
+      options.push(`<option value="${i}">${escapeHtml(label)}</option>`);
+    }
+  }
+  select.innerHTML = '<option value="">Gunakan rekening default dari pengaturan</option>' + options.join('');
+}
+
 async function populateSettingsForm(){
   settingsMsg.textContent = '';
   document.getElementById('accountMsg').textContent = '';
@@ -1146,6 +1174,7 @@ async function populateSettingsForm(){
   document.getElementById('settingsTiktok').value = settingsMap.tiktok_url || '';
   document.getElementById('settingsFacebook').value = settingsMap.facebook_url || '';
   renderPaymentAccountsForm();
+  renderInvoiceBankAccountOptions();
 }
 
 document.getElementById('addPaymentAccountBtn').addEventListener('click', () => {
@@ -1674,7 +1703,17 @@ document.getElementById('galleryUploadBtn').addEventListener('click', async () =
 /* ================= INVOICE ================= */
 const invoiceForm = document.getElementById('invoiceForm');
 const invoiceFormMsg = document.getElementById('invoiceFormMsg');
+const invBankAccountSelect = document.getElementById('invBankAccountSelect');
+const invIncludeQris = document.getElementById('invIncludeQris');
+const invQrisFile = document.getElementById('invQrisFile');
 let allInvoices = [];
+
+if (invIncludeQris && invQrisFile) {
+  invIncludeQris.addEventListener('change', () => {
+    invQrisFile.style.display = invIncludeQris.checked ? 'block' : 'none';
+    if (!invIncludeQris.checked) invQrisFile.value = '';
+  });
+}
 
 document.getElementById('invOrderPicker').addEventListener('change', (e) => {
   const o = allOrders.find(x => x.id === e.target.value);
@@ -1686,6 +1725,7 @@ document.getElementById('invOrderPicker').addEventListener('change', (e) => {
 });
 
 async function loadInvoicesAdmin(){
+  await loadSettingsMap();
   const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
   const list = document.getElementById('invoiceAdminList');
   if (error){
@@ -1706,6 +1746,7 @@ async function loadInvoicesAdmin(){
         <strong>${escapeHtml(inv.customer_name)} · Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</strong>
         <p>${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}</p>
         <p>${(inv.bank_name || inv.bank_account_number || inv.bank_account_holder || settingsMap.payment_bank_name_1 || settingsMap.payment_bank_number_1 || settingsMap.payment_bank_holder_1 || settingsMap.payment_bank_name_2 || settingsMap.payment_bank_number_2 || settingsMap.payment_bank_holder_2) ? `Rekening: ${escapeHtml(getInvoicePaymentDetails(inv).bankAccounts.join(' | '))}` : 'Rekening belum diisi'}</p>
+        <p>${inv.qris_image_url ? 'QRIS: tersedia' : 'QRIS: tidak ada'}</p>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
         <span class="badge ${inv.status === 'paid' ? 'badge-selesai' : 'badge-diproses'}">${inv.status === 'paid' ? 'Lunas' : 'Belum Lunas'}</span>
@@ -1769,14 +1810,14 @@ function renderInvoiceSummary(){
 
 function getInvoicePaymentDetails(inv) {
   const bankAccounts = [];
-  const bank1 = [settingsMap.payment_bank_name_1, settingsMap.payment_bank_number_1, settingsMap.payment_bank_holder_1].filter(Boolean);
-  const bank2 = [settingsMap.payment_bank_name_2, settingsMap.payment_bank_number_2, settingsMap.payment_bank_holder_2].filter(Boolean);
-  if (bank1.length) bankAccounts.push(bank1.join(' / '));
-  if (bank2.length) bankAccounts.push(bank2.join(' / '));
   if (inv?.bank_name || inv?.bank_account_number || inv?.bank_account_holder) {
     const invBank = [inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean);
-    if (invBank.length) bankAccounts.unshift(invBank.join(' / '));
+    if (invBank.length) bankAccounts.push(invBank.join(' / '));
   }
+  const bank1 = [settingsMap.payment_bank_name_1, settingsMap.payment_bank_number_1, settingsMap.payment_bank_holder_1].filter(Boolean);
+  const bank2 = [settingsMap.payment_bank_name_2, settingsMap.payment_bank_number_2, settingsMap.payment_bank_holder_2].filter(Boolean);
+  if (bank1.length && !bankAccounts.length) bankAccounts.push(bank1.join(' / '));
+  if (bank2.length && !bankAccounts.length) bankAccounts.push(bank2.join(' / '));
   return { bankAccounts };
 }
 
@@ -1786,17 +1827,57 @@ invoiceForm.addEventListener('submit', async (e) => {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   invoiceFormMsg.textContent = '';
 
+  const selectedBankValue = invBankAccountSelect?.value || '';
+  const bankPayload = {};
+  if (selectedBankValue) {
+    const selectedIndex = Number(selectedBankValue);
+    const selectedBank = {
+      bank_name: settingsMap[`payment_bank_name_${selectedIndex}`] || '',
+      bank_account_number: settingsMap[`payment_bank_number_${selectedIndex}`] || '',
+      bank_account_holder: settingsMap[`payment_bank_holder_${selectedIndex}`] || ''
+    };
+    if (selectedBank.bank_name || selectedBank.bank_account_number || selectedBank.bank_account_holder) {
+      Object.assign(bankPayload, selectedBank);
+    }
+  }
+
+  let qrisImageUrl = null;
+  let qrisStoragePath = null;
+  if (invIncludeQris?.checked) {
+    const file = invQrisFile?.files?.[0];
+    if (!file) {
+      invoiceFormMsg.textContent = 'Pilih file QRIS terlebih dahulu bila opsi QRIS diaktifkan.';
+      invoiceFormMsg.style.color = '#a13232';
+      btn.disabled = false; btn.textContent = 'Simpan Invoice';
+      return;
+    }
+    const path = `qris_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '')}`;
+    try {
+      const { error: uploadError } = await supabase.storage.from('invoices').upload(path, file, { upsert: false });
+      if (uploadError) throw uploadError;
+      const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
+      qrisImageUrl = pub.publicUrl;
+      qrisStoragePath = path;
+    } catch (err) {
+      console.warn('Gagal mengunggah QRIS:', err);
+      qrisImageUrl = null;
+      qrisStoragePath = null;
+    }
+  }
+
   const payload = {
     order_id: document.getElementById('invOrderPicker').value || null,
     customer_name: document.getElementById('invCustomerName').value.trim(),
     phone: document.getElementById('invPhone').value.trim(),
     description: document.getElementById('invDesc').value.trim(),
     amount: Number(document.getElementById('invAmount').value || 0),
-    status: document.getElementById('invStatus').value
+    status: document.getElementById('invStatus').value,
+    ...bankPayload,
+    qris_image_url: qrisImageUrl,
+    qris_storage_path: qrisStoragePath
   };
 
-  // insert and get created row
-  const { data: inserted, error } = await supabase.from('invoices').insert([payload]).select().single();
+  const { error } = await supabase.from('invoices').insert([payload]).select().single();
   btn.disabled = false; btn.textContent = 'Simpan Invoice';
 
   if (error){
@@ -1808,11 +1889,18 @@ invoiceForm.addEventListener('submit', async (e) => {
   invoiceFormMsg.textContent = 'Invoice tersimpan. Anda bisa mencetaknya sebagai PDF nanti.';
   invoiceFormMsg.style.color = '#2f7a4f';
   invoiceForm.reset();
+  if (invIncludeQris) invIncludeQris.checked = false;
+  if (invQrisFile) {
+    invQrisFile.value = '';
+    invQrisFile.style.display = 'none';
+  }
+  renderInvoiceBankAccountOptions();
   loadInvoicesAdmin();
 });
 
 function openInvoicePrintView(inv){
   const paymentDetails = getInvoicePaymentDetails(inv);
+  const qrisMarkup = inv.qris_image_url ? `<div class="card"><div class="meta" style="margin-bottom:8px;">QRIS</div><img src="${escapeHtml(inv.qris_image_url)}" alt="QRIS" style="max-width:220px;display:block;border:1px solid #ececec;border-radius:12px;" /></div>` : '';
   const html = `<!doctype html>
   <html>
     <head>
@@ -1870,6 +1958,7 @@ function openInvoicePrintView(inv){
           <div class="row"><span class="label">Metode Pembayaran</span><span class="value">${paymentDetails.bankAccounts.length ? 'Transfer Bank' : 'Belum ditentukan'}</span></div>
         </div>
         ${paymentDetails.bankAccounts.length ? `<div class="card"><div class="meta" style="margin-bottom:8px;">Rekening</div><div style="font-size:13px;line-height:1.6;color:#374151;">${escapeHtml(paymentDetails.bankAccounts.join(' | '))}</div></div>` : ''}
+        ${qrisMarkup}
         <div class="actions no-print">
           <button class="btn" onclick="window.print()">Cetak ke PDF</button>
           <button class="btn" onclick="window.close()">Tutup</button>
@@ -1903,6 +1992,9 @@ function buildInvoiceMessage(inv){
     const paymentDetails = getInvoicePaymentDetails(inv);
     if (paymentDetails.bankAccounts.length) {
       paymentDetails.bankAccounts.forEach((account) => lines.push(`- Transfer Bank: ${account}`));
+    }
+    if (inv.qris_image_url) {
+      lines.push('- QRIS tersedia dalam invoice');
     }
     lines.push('- Rekening dapat dicetak dari tampilan invoice ini');
   }
