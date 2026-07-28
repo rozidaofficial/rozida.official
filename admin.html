@@ -89,6 +89,35 @@
 
   .panel-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:22px;}
   .panel-card h3{margin:0 0 16px;font-size:1.25rem;}
+  .section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+  .section-head h3{margin:0;font-size:1.1rem;}
+  .section-head .meta{margin:0;font-size:.8rem;color:var(--ink-soft);}
+  .summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px;}
+  .summary-card{background:linear-gradient(135deg,#f9fbff 0%,#eef4ff 100%);border:1px solid #e4ecfb;border-radius:12px;padding:14px 16px;}
+  .summary-card .value{font-size:1.2rem;font-weight:700;color:var(--ink);} 
+  .summary-card .label{font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px;}
+  .agenda-calendar{background:#f9fbff;border:1px solid #e4ecfb;border-radius:12px;padding:14px;}
+  .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
+  .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
+  .calendar-grid .dow{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);text-align:center;padding-bottom:2px;}
+  .calendar-cell{min-height:78px;border:1px solid #e5ebf7;border-radius:10px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative;}
+  .calendar-cell.muted{opacity:.45;}
+  .calendar-cell.today{border-color:#5f7fd8;box-shadow:inset 0 0 0 1px #5f7fd8;}
+  .calendar-cell .day-number{font-size:.78rem;font-weight:600;color:var(--ink);} 
+  .calendar-cell .event-pill{font-size:.62rem;padding:3px 6px;border-radius:999px;background:#eef5ff;color:#3457a4;display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .calendar-list{display:grid;gap:8px;margin-top:12px;}
+  .calendar-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border:1px solid #e7edf8;border-radius:10px;background:#fff;}
+  .calendar-item .title{font-weight:600;font-size:.9rem;}
+  .calendar-item .meta{font-size:.78rem;color:var(--ink-soft);margin-top:2px;}
+  .invoice-card{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #ececf2;}
+  .invoice-card:last-child{border-bottom:none;}
+  .invoice-card .left strong{display:block;margin-bottom:3px;}
+  .invoice-card .left p{margin:2px 0;font-size:.8rem;color:var(--ink-soft);} 
+  .finance-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #ececf2;}
+  .finance-item:last-child{border-bottom:none;}
+  .finance-item .amount{font-weight:700;}
+  .finance-item .amount.income{color:#2d7a4f;}
+  .finance-item .amount.expense{color:#a13232;}
   .inline-form{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;align-items:end;}
   @media(max-width:900px){.inline-form{grid-template-columns:1fr 1fr;}}
   @media(max-width:560px){.inline-form{grid-template-columns:1fr;}}
@@ -256,6 +285,12 @@
 
     <!-- ===== TAB PESANAN ===== -->
     <div class="tab-panel active" id="tabPesanan">
+      <div class="section-head">
+        <div>
+          <h3>Data Pemesanan</h3>
+          <p class="meta">Pantau pesanan pelanggan, status, dan rincian pembayaran dari satu tempat.</p>
+        </div>
+      </div>
       <div class="toolbar">
         <div class="toolbar-left">
           <input type="text" id="searchBox" placeholder="Cari nama, no. WhatsApp, atau layanan...">
@@ -316,8 +351,19 @@
         <div id="agendaFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
       </div>
       <div class="panel-card">
-        <h3>Daftar Agenda</h3>
-        <div id="agendaAdminList"><p class="empty-state">Memuat...</p></div>
+        <div class="section-head">
+          <div>
+            <h3>Kalender Agenda</h3>
+            <p class="meta">Lihat agenda yang sudah masuk dan tetapkan momen penting dengan lebih rapi.</p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="mini-btn" id="agendaPrevMonth">←</button>
+            <strong id="agendaMonthLabel">Bulan ini</strong>
+            <button type="button" class="mini-btn" id="agendaNextMonth">→</button>
+          </div>
+        </div>
+        <div class="agenda-calendar" id="agendaCalendar"></div>
+        <div class="calendar-list" id="agendaAdminList"><p class="empty-state">Memuat...</p></div>
       </div>
     </div>
 
@@ -433,7 +479,17 @@
       </div>
 
       <div class="panel-card" style="margin-top:16px;">
-        <h3>Daftar Invoice</h3>
+        <div class="section-head">
+          <div>
+            <h3>Daftar Invoice</h3>
+            <p class="meta">Pantau status pembayaran dan kirim invoice dengan cepat.</p>
+          </div>
+        </div>
+        <div class="summary-grid">
+          <div class="summary-card"><div class="value" id="invoiceSummaryTotal">0</div><div class="label">Total Invoice</div></div>
+          <div class="summary-card"><div class="value" id="invoiceSummaryUnpaid">0</div><div class="label">Belum Lunas</div></div>
+          <div class="summary-card"><div class="value" id="invoiceSummaryPaid">0</div><div class="label">Lunas</div></div>
+        </div>
         <div id="invoiceAdminList"><p class="empty-state">Memuat...</p></div>
       </div>
     </div>
@@ -521,29 +577,37 @@
 
         <hr style="border:none;border-top:1px solid #eee;margin:18px 0;">
         <h3 style="font-size:1.02rem;margin-bottom:8px;">Metode Pembayaran</h3>
-        <p class="meta">Pilih metode yang ingin ditampilkan di invoice pelanggan.</p>
+        <p class="meta">Isi rekening yang ingin ditampilkan di invoice pelanggan. Bisa lebih dari satu rekening.</p>
 
-        <label class="toggle-pill"><input type="checkbox" id="paymentQrisEnabled"> Aktifkan QRIS</label>
         <div class="field" style="margin-top:8px;">
-          <label>Gambar QRIS (opsional, untuk ditampilkan/upload ulang)</label>
-          <input type="file" id="paymentQrisFile" accept="image/*">
-          <div id="paymentQrisPreviewWrap" style="margin-top:8px;display:none;">
-            <img id="paymentQrisPreview" src="" alt="QRIS" style="max-width:160px;border-radius:8px;border:1px solid #eee;">
-          </div>
-        </div>
-
-        <label class="toggle-pill" style="margin-top:14px;"><input type="checkbox" id="paymentBankEnabled"> Aktifkan Transfer Bank</label>
-        <div class="field" style="margin-top:8px;">
-          <label>Nama Bank</label>
-          <input type="text" id="paymentBankName" placeholder="Contoh: BCA">
+          <label>Rekening 1 — Nama Bank</label>
+          <input type="text" id="paymentBankName1" placeholder="Contoh: BCA">
         </div>
         <div class="field">
-          <label>Nomor Rekening</label>
-          <input type="text" id="paymentBankNumber" placeholder="Contoh: 1234567890">
+          <label>Rekening 1 — Nomor Rekening</label>
+          <input type="text" id="paymentBankNumber1" placeholder="Contoh: 1234567890">
         </div>
         <div class="field">
-          <label>Atas Nama</label>
-          <input type="text" id="paymentBankHolder" placeholder="Nama pemilik rekening">
+          <label>Rekening 1 — Atas Nama</label>
+          <input type="text" id="paymentBankHolder1" placeholder="Nama pemilik rekening">
+        </div>
+
+        <div class="field" style="margin-top:8px;">
+          <label>Rekening 2 — Nama Bank</label>
+          <input type="text" id="paymentBankName2" placeholder="Contoh: BRI">
+        </div>
+        <div class="field">
+          <label>Rekening 2 — Nomor Rekening</label>
+          <input type="text" id="paymentBankNumber2" placeholder="Contoh: 9876543210">
+        </div>
+        <div class="field">
+          <label>Rekening 2 — Atas Nama</label>
+          <input type="text" id="paymentBankHolder2" placeholder="Nama pemilik rekening">
+        </div>
+
+        <div class="field" style="margin-top:8px;">
+          <label>QRIS (URL gambar, opsional)</label>
+          <input type="text" id="paymentQrisImage" placeholder="https://.../qris.png">
         </div>
 
         <div id="settingsMsg" style="font-size:.82rem;margin-bottom:14px;min-height:18px;"></div>
@@ -1003,8 +1067,8 @@ function normalizePhone(raw) {
 
 const SETTINGS_KEYS = [
   'admin_whatsapp','instagram_url','tiktok_url','facebook_url',
-  'payment_qris_enabled','payment_qris_image','payment_bank_enabled',
-  'payment_bank_name','payment_bank_number','payment_bank_holder'
+  'payment_qris_image','payment_bank_name_1','payment_bank_number_1','payment_bank_holder_1',
+  'payment_bank_name_2','payment_bank_number_2','payment_bank_holder_2'
 ];
 let settingsMap = {};
 
@@ -1037,19 +1101,13 @@ async function populateSettingsForm(){
   document.getElementById('settingsInstagram').value = settingsMap.instagram_url || '';
   document.getElementById('settingsTiktok').value = settingsMap.tiktok_url || '';
   document.getElementById('settingsFacebook').value = settingsMap.facebook_url || '';
-  document.getElementById('paymentQrisEnabled').checked = settingsMap.payment_qris_enabled === 'true';
-  document.getElementById('paymentBankEnabled').checked = settingsMap.payment_bank_enabled === 'true';
-  document.getElementById('paymentBankName').value = settingsMap.payment_bank_name || '';
-  document.getElementById('paymentBankNumber').value = settingsMap.payment_bank_number || '';
-  document.getElementById('paymentBankHolder').value = settingsMap.payment_bank_holder || '';
-  const qrisPreview = document.getElementById('paymentQrisPreview');
-  const qrisWrap = document.getElementById('paymentQrisPreviewWrap');
-  if (settingsMap.payment_qris_image){
-    qrisPreview.src = settingsMap.payment_qris_image;
-    qrisWrap.style.display = 'block';
-  } else {
-    qrisWrap.style.display = 'none';
-  }
+  document.getElementById('paymentBankName1').value = settingsMap.payment_bank_name_1 || '';
+  document.getElementById('paymentBankNumber1').value = settingsMap.payment_bank_number_1 || '';
+  document.getElementById('paymentBankHolder1').value = settingsMap.payment_bank_holder_1 || '';
+  document.getElementById('paymentBankName2').value = settingsMap.payment_bank_name_2 || '';
+  document.getElementById('paymentBankNumber2').value = settingsMap.payment_bank_number_2 || '';
+  document.getElementById('paymentBankHolder2').value = settingsMap.payment_bank_holder_2 || '';
+  document.getElementById('paymentQrisImage').value = settingsMap.payment_qris_image || '';
 }
 
 document.getElementById('settingsBtn').addEventListener('click', async () => {
@@ -1076,39 +1134,26 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   const instagram = document.getElementById('settingsInstagram').value.trim();
   const tiktok = document.getElementById('settingsTiktok').value.trim();
   const facebook = document.getElementById('settingsFacebook').value.trim();
-  const qrisEnabled = document.getElementById('paymentQrisEnabled').checked;
-  const bankEnabled = document.getElementById('paymentBankEnabled').checked;
-  const bankName = document.getElementById('paymentBankName').value.trim();
-  const bankNumber = document.getElementById('paymentBankNumber').value.trim();
-  const bankHolder = document.getElementById('paymentBankHolder').value.trim();
-
-  // Upload gambar QRIS baru jika dipilih
-  let qrisImageUrl = settingsMap.payment_qris_image || '';
-  const qrisFile = document.getElementById('paymentQrisFile').files[0];
-  if (qrisFile){
-    const path = `qris/${Date.now()}_${qrisFile.name}`;
-    const { error: upErr } = await supabase.storage.from('gallery').upload(path, qrisFile, { upsert: false });
-    if (upErr){
-      settingsMsg.textContent = 'Gagal upload QRIS: ' + upErr.message;
-      settingsMsg.style.color = '#a13232';
-      btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
-      return;
-    }
-    const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
-    qrisImageUrl = pub.publicUrl;
-  }
+  const bankName1 = document.getElementById('paymentBankName1').value.trim();
+  const bankNumber1 = document.getElementById('paymentBankNumber1').value.trim();
+  const bankHolder1 = document.getElementById('paymentBankHolder1').value.trim();
+  const bankName2 = document.getElementById('paymentBankName2').value.trim();
+  const bankNumber2 = document.getElementById('paymentBankNumber2').value.trim();
+  const bankHolder2 = document.getElementById('paymentBankHolder2').value.trim();
+  const qrisImageUrl = document.getElementById('paymentQrisImage').value.trim();
 
   const settingsPayload = {
     admin_whatsapp: normalized,
     instagram_url: instagram,
     tiktok_url: tiktok,
     facebook_url: facebook,
-    payment_qris_enabled: String(qrisEnabled),
     payment_qris_image: qrisImageUrl,
-    payment_bank_enabled: String(bankEnabled),
-    payment_bank_name: bankName,
-    payment_bank_number: bankNumber,
-    payment_bank_holder: bankHolder
+    payment_bank_name_1: bankName1,
+    payment_bank_number_1: bankNumber1,
+    payment_bank_holder_1: bankHolder1,
+    payment_bank_name_2: bankName2,
+    payment_bank_number_2: bankNumber2,
+    payment_bank_holder_2: bankHolder2
   };
 
   let remoteError = null;
@@ -1196,28 +1241,75 @@ document.getElementById('changePasswordBtn').addEventListener('click', async () 
 const agendaForm = document.getElementById('agendaForm');
 const agendaFormMsg = document.getElementById('agendaFormMsg');
 let allAgenda = [];
+let agendaViewDate = new Date();
 
-async function loadAgendaAdmin(){
-  const { data, error } = await supabase.from('agenda').select('*').order('event_date', { ascending: true });
+function renderAgendaCalendar(){
+  const cal = document.getElementById('agendaCalendar');
+  const label = document.getElementById('agendaMonthLabel');
+  if (!cal || !label) return;
+
+  const year = agendaViewDate.getFullYear();
+  const month = agendaViewDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const startWeekDay = firstDay.getDay();
+  const daysInMonth = lastDay.getDate();
+  const today = new Date();
+  label.textContent = agendaViewDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+  const dayMap = new Map();
+  (allAgenda || []).forEach(item => {
+    const key = item.event_date;
+    if (key) dayMap.set(key, (dayMap.get(key) || 0) + 1);
+  });
+
+  const cells = [];
+  const dowNames = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  dowNames.forEach(d => cells.push(`<div class="dow">${d}</div>`));
+
+  for (let i = 0; i < startWeekDay; i++) {
+    cells.push('<div class="calendar-cell muted"></div>');
+  }
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(year, month, day);
+    const value = date.toISOString().slice(0, 10);
+    const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+    const count = dayMap.get(value) || 0;
+    const eventMarkup = count ? `<span class="event-pill">${count} agenda</span>` : '';
+    cells.push(`
+      <div class="calendar-cell ${isToday ? 'today' : ''}">
+        <div class="day-number">${day}</div>
+        ${eventMarkup}
+      </div>
+    `);
+  }
+
+  cal.innerHTML = `<div class="calendar-grid">${cells.join('')}</div>`;
+}
+
+function renderAgendaList(){
   const list = document.getElementById('agendaAdminList');
-  if (error){
-    list.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
+  if (!list) return;
+
+  const monthKey = `${agendaViewDate.getFullYear()}-${String(agendaViewDate.getMonth() + 1).padStart(2, '0')}`;
+  const filtered = (allAgenda || []).filter(item => {
+    const itemDate = item.event_date || '';
+    return itemDate.startsWith(monthKey);
+  });
+
+  if (!filtered.length){
+    list.innerHTML = '<p class="empty-state">Belum ada agenda pada bulan ini.</p>';
     return;
   }
-  allAgenda = data || [];
-  if (!allAgenda.length){
-    list.innerHTML = '<p class="empty-state">Belum ada agenda.</p>';
-    return;
-  }
-  list.innerHTML = allAgenda.map(a => `
-    <div class="list-row">
-      <div class="info">
-        <h4>${formatDateOnly(a.event_date)} — ${escapeHtml(a.title)}</h4>
-        <p>${escapeHtml(a.note || '')}</p>
+
+  list.innerHTML = filtered.map(a => `
+    <div class="calendar-item">
+      <div>
+        <div class="title">${escapeHtml(a.title)}</div>
+        <div class="meta">${formatDateOnly(a.event_date)}${a.note ? ` · ${escapeHtml(a.note)}` : ''}</div>
       </div>
-      <div class="actions">
-        <button class="mini-btn danger" data-id="${a.id}" data-action="del-agenda">Hapus</button>
-      </div>
+      <button class="mini-btn danger" data-id="${a.id}" data-action="del-agenda">Hapus</button>
     </div>
   `).join('');
 
@@ -1227,6 +1319,35 @@ async function loadAgendaAdmin(){
       await supabase.from('agenda').delete().eq('id', btn.dataset.id);
       loadAgendaAdmin();
     });
+  });
+}
+
+async function loadAgendaAdmin(){
+  const { data, error } = await supabase.from('agenda').select('*').order('event_date', { ascending: true });
+  const list = document.getElementById('agendaAdminList');
+  if (error){
+    if (list) list.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  allAgenda = data || [];
+  renderAgendaCalendar();
+  renderAgendaList();
+}
+
+const agendaPrevMonthBtn = document.getElementById('agendaPrevMonth');
+const agendaNextMonthBtn = document.getElementById('agendaNextMonth');
+if (agendaPrevMonthBtn) {
+  agendaPrevMonthBtn.addEventListener('click', () => {
+    agendaViewDate = new Date(agendaViewDate.getFullYear(), agendaViewDate.getMonth() - 1, 1);
+    renderAgendaCalendar();
+    renderAgendaList();
+  });
+}
+if (agendaNextMonthBtn) {
+  agendaNextMonthBtn.addEventListener('click', () => {
+    agendaViewDate = new Date(agendaViewDate.getFullYear(), agendaViewDate.getMonth() + 1, 1);
+    renderAgendaCalendar();
+    renderAgendaList();
   });
 }
 
@@ -1484,27 +1605,31 @@ async function loadInvoicesAdmin(){
   if (error){
     list.innerHTML = `<p class="empty-state">Gagal memuat invoice (pastikan tabel "invoices" sudah dibuat di Supabase): ${escapeHtml(error.message)}</p>`;
     allInvoices = [];
+    renderInvoiceSummary();
     return;
   }
   allInvoices = data || [];
+  renderInvoiceSummary();
   if (!allInvoices.length){
     list.innerHTML = '<p class="empty-state">Belum ada invoice.</p>';
     return;
   }
   list.innerHTML = allInvoices.map(inv => `
-    <div class="list-row">
-      <div class="info">
-        <h4>${escapeHtml(inv.customer_name)} — Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}
-          ${inv.status === 'paid' ? '<span style="color:#2f7a4f;font-size:.72rem;">(Lunas)</span>' : '<span style="color:#a13232;font-size:.72rem;">(Belum Lunas)</span>'}
-        </h4>
-        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}${(inv.bank_name || inv.bank_account_number || inv.bank_account_holder) ? ` · Rek: ${escapeHtml([inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean).join(' / '))}` : ''}${inv.qris_image_url ? ' · QRIS terlampir' : ''}</p>
+    <div class="invoice-card">
+      <div class="left">
+        <strong>${escapeHtml(inv.customer_name)} · Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</strong>
+        <p>${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}</p>
+        <p>${(inv.bank_name || inv.bank_account_number || inv.bank_account_holder || settingsMap.payment_bank_name_1 || settingsMap.payment_bank_number_1 || settingsMap.payment_bank_holder_1 || settingsMap.payment_bank_name_2 || settingsMap.payment_bank_number_2 || settingsMap.payment_bank_holder_2) ? `Rekening: ${escapeHtml(getInvoicePaymentDetails(inv).bankAccounts.join(' | '))}` : 'Rekening belum diisi'}${getInvoicePaymentDetails(inv).qrisUrl ? ' · QRIS tersedia' : ''}</p>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
-        ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Lihat PDF</a>` : ''}
-        <button class="mini-btn" data-id="${inv.id}" data-action="regen-pdf">${inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF'}</button>
-        <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
-        <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+        <span class="badge ${inv.status === 'paid' ? 'badge-selesai' : 'badge-diproses'}">${inv.status === 'paid' ? 'Lunas' : 'Belum Lunas'}</span>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
+          <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
+          ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Lihat PDF</a>` : ''}
+          <button class="mini-btn" data-id="${inv.id}" data-action="regen-pdf">${inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF'}</button>
+          <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
+          <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
+        </div>
       </div>
     </div>
   `).join('');
@@ -1551,6 +1676,16 @@ async function loadInvoicesAdmin(){
   });
 }
 
+function renderInvoiceSummary(){
+  const totalEl = document.getElementById('invoiceSummaryTotal');
+  const unpaidEl = document.getElementById('invoiceSummaryUnpaid');
+  const paidEl = document.getElementById('invoiceSummaryPaid');
+  if (!totalEl || !unpaidEl || !paidEl) return;
+  totalEl.textContent = allInvoices.length;
+  unpaidEl.textContent = allInvoices.filter(inv => inv.status !== 'paid').length;
+  paidEl.textContent = allInvoices.filter(inv => inv.status === 'paid').length;
+}
+
 async function uploadInvoiceQris(file) {
   if (!file) return { url: null, path: null };
   const path = `invoice-qris/${Date.now()}_${file.name}`;
@@ -1558,6 +1693,20 @@ async function uploadInvoiceQris(file) {
   if (upErr) throw upErr;
   const { data: pub } = supabase.storage.from('gallery').getPublicUrl(path);
   return { url: pub.publicUrl, path };
+}
+
+function getInvoicePaymentDetails(inv) {
+  const bankAccounts = [];
+  const bank1 = [settingsMap.payment_bank_name_1, settingsMap.payment_bank_number_1, settingsMap.payment_bank_holder_1].filter(Boolean);
+  const bank2 = [settingsMap.payment_bank_name_2, settingsMap.payment_bank_number_2, settingsMap.payment_bank_holder_2].filter(Boolean);
+  if (bank1.length) bankAccounts.push(bank1.join(' / '));
+  if (bank2.length) bankAccounts.push(bank2.join(' / '));
+  if (inv?.bank_name || inv?.bank_account_number || inv?.bank_account_holder) {
+    const invBank = [inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean);
+    if (invBank.length) bankAccounts.unshift(invBank.join(' / '));
+  }
+  const qrisUrl = inv?.qris_image_url || settingsMap.payment_qris_image || '';
+  return { bankAccounts, qrisUrl };
 }
 
 invoiceForm.addEventListener('submit', async (e) => {
@@ -1639,8 +1788,8 @@ async function generateInvoicePDF(inv){
         <tr><td style="padding:6px 0;">WA</td><td style="padding:6px 0;">${escapeHtml(inv.phone)}</td></tr>
         <tr><td style="padding:6px 0;">Rincian</td><td style="padding:6px 0;">${escapeHtml(inv.description || '')}</td></tr>
         <tr><td style="padding:6px 0;">Jumlah</td><td style="padding:6px 0;">Rp ${Number(inv.amount||0).toLocaleString('id-ID')}</td></tr>
-        ${((inv.bank_name || inv.bank_account_number || inv.bank_account_holder)) ? `<tr><td style="padding:6px 0;">Rekening</td><td style="padding:6px 0;">${escapeHtml([inv.bank_name, inv.bank_account_number, inv.bank_account_holder].filter(Boolean).join(' / '))}</td></tr>` : ''}
-        ${inv.qris_image_url ? `<tr><td style="padding:6px 0;">QRIS</td><td style="padding:6px 0;"><img src="${inv.qris_image_url}" style="max-width:180px;height:auto;display:block;margin-top:6px;" /></td></tr>` : ''}
+        ${getInvoicePaymentDetails(inv).bankAccounts.length ? `<tr><td style="padding:6px 0;">Rekening</td><td style="padding:6px 0;">${escapeHtml(getInvoicePaymentDetails(inv).bankAccounts.join(' | '))}</td></tr>` : ''}
+        ${getInvoicePaymentDetails(inv).qrisUrl ? `<tr><td style="padding:6px 0;">QRIS</td><td style="padding:6px 0;"><img src="${getInvoicePaymentDetails(inv).qrisUrl}" style="max-width:180px;height:auto;display:block;margin-top:6px;" /></td></tr>` : ''}
         <tr><td style="padding:6px 0;">Status</td><td style="padding:6px 0;">${inv.status}</td></tr>
       </table>
       <div style="margin-top:20px;color:#6b6055;">Terima kasih telah memesan di Rozida.Official 🌷</div>
@@ -1677,15 +1826,12 @@ function buildInvoiceMessage(inv){
   if (inv.status !== 'paid'){
     lines.push('');
     lines.push('Pembayaran dapat dilakukan melalui:');
-    const bankName = inv.bank_name || settingsMap.payment_bank_name || '';
-    const bankNumber = inv.bank_account_number || settingsMap.payment_bank_number || '';
-    const bankHolder = inv.bank_account_holder || settingsMap.payment_bank_holder || '';
-    const qrisUrl = inv.qris_image_url || settingsMap.payment_qris_image || '';
-    if (qrisUrl) {
-      lines.push(`- QRIS: ${qrisUrl}`);
+    const paymentDetails = getInvoicePaymentDetails(inv);
+    if (paymentDetails.qrisUrl) {
+      lines.push(`- QRIS: ${paymentDetails.qrisUrl}`);
     }
-    if (bankName || bankNumber || bankHolder) {
-      lines.push(`- Transfer ${bankName} No. Rek ${bankNumber} a.n ${bankHolder}`);
+    if (paymentDetails.bankAccounts.length) {
+      paymentDetails.bankAccounts.forEach((account) => lines.push(`- Transfer Bank: ${account}`));
     }
   }
   lines.push('');
@@ -1740,14 +1886,15 @@ async function loadFinanceAdmin(){
     return;
   }
   list.innerHTML = allFinance.map(f => `
-    <div class="list-row">
-      <div class="info">
-        <h4 style="color:${f.type === 'income' ? '#2f7a4f' : '#a13232'};">
-          ${f.type === 'income' ? '+' : '-'} Rp ${Number(f.amount || 0).toLocaleString('id-ID')} — ${escapeHtml(f.category || '')}
-        </h4>
-        <p style="margin:2px 0;font-size:.82rem;color:var(--ink-soft);">${formatDateOnly(f.date)} · ${escapeHtml(f.description || '')} ${f.source === 'invoice' ? '(otomatis dari invoice)' : ''}</p>
+    <div class="finance-item">
+      <div>
+        <div style="font-weight:600;">${escapeHtml(f.category || 'Lainnya')} · ${escapeHtml(f.description || '')}</div>
+        <div style="font-size:.78rem;color:var(--ink-soft);margin-top:2px;">${formatDateOnly(f.date)} · ${escapeHtml(f.type === 'income' ? 'Pemasukan' : 'Pengeluaran')} ${f.source === 'invoice' ? '(otomatis dari invoice)' : ''}</div>
       </div>
-      <button class="mini-btn danger" data-id="${f.id}" data-action="del-finance">Hapus</button>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <span class="amount ${f.type === 'income' ? 'income' : 'expense'}">${f.type === 'income' ? '+' : '-'} Rp ${Number(f.amount || 0).toLocaleString('id-ID')}</span>
+        <button class="mini-btn danger" data-id="${f.id}" data-action="del-finance">Hapus</button>
+      </div>
     </div>
   `).join('');
 
