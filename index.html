@@ -248,6 +248,67 @@
     animation:spin .7s linear infinite;vertical-align:-3px;margin-right:6px;
   }
   @keyframes spin{to{transform:rotate(360deg);}}
+
+  /* topbar social */
+  .topbar-right{display:flex;align-items:center;gap:14px;}
+  .social-inline{display:flex;align-items:center;gap:10px;}
+  .social-inline a{display:inline-flex;color:var(--gold-light);opacity:.9;}
+  .social-inline a:hover{opacity:1;}
+  .social-inline svg{width:15px;height:15px;}
+
+  .footer-social{display:flex;gap:12px;margin-top:10px;}
+  .footer-social a{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border:1px solid rgba(255,255,255,.18);border-radius:50%;color:var(--gold-light);text-decoration:none;transition:.2s;}
+  .footer-social a:hover{background:rgba(255,255,255,.08);}
+  .footer-social svg{width:16px;height:16px;}
+
+  .empty-mini{color:var(--ink-soft);font-size:.88rem;text-align:center;grid-column:1/-1;padding:20px;}
+
+  /* agenda / kalender */
+  .agenda-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;align-items:start;}
+  @media(max-width:800px){.agenda-layout{grid-template-columns:1fr;}}
+  .cal-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 20px 16px;}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Cormorant Garamond',serif;font-size:1.15rem;}
+  .cal-head button{background:var(--ivory);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--ink);}
+  .cal-head button:hover{border-color:var(--gold);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
+  .cal-grid .dow{font-size:.68rem;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;padding-bottom:6px;}
+  .cal-grid .day{position:relative;font-size:.82rem;padding:8px 0;border-radius:8px;color:var(--ink);}
+  .cal-grid .day.blank{visibility:hidden;}
+  .cal-grid .day.has-agenda{background:linear-gradient(135deg,rgba(184,137,74,.15),rgba(233,205,142,.25));font-weight:500;color:var(--gold-deep);}
+  .cal-grid .day.today{outline:1px solid var(--wine);}
+  .cal-legend{font-size:.76rem;color:var(--ink-soft);margin:12px 0 0;display:flex;align-items:center;gap:6px;}
+  .cal-legend .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;}
+  .agenda-list{display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto;}
+  .agenda-item{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start;}
+  .agenda-item .a-date{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold-deep);min-width:64px;text-align:center;}
+  .agenda-item .a-date small{display:block;font-family:'Jost',sans-serif;font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
+  .agenda-item h4{margin:0 0 4px;font-size:1rem;font-family:'Jost',sans-serif;font-weight:500;}
+  .agenda-item p{margin:0;font-size:.82rem;color:var(--ink-soft);}
+
+  /* testimoni */
+  .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
+  @media(max-width:820px){.testi-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.testi-grid{grid-template-columns:1fr;}}
+  .testi-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:26px 22px;}
+  .testi-stars{color:var(--gold);font-size:.9rem;letter-spacing:2px;margin-bottom:10px;}
+  .testi-card p.msg{font-size:.9rem;color:var(--ink-soft);font-style:italic;margin:0 0 16px;}
+  .testi-card .who{font-size:.85rem;font-weight:500;color:var(--ink);}
+
+  /* gallery */
+  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:820px){.gallery-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:560px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
+  .gallery-item{position:relative;border-radius:12px;overflow:hidden;aspect-ratio:1/1;border:1px solid var(--border);cursor:pointer;}
+  .gallery-item img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s;}
+  .gallery-item:hover img{transform:scale(1.06);}
+  .gallery-item .cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(to top,rgba(0,0,0,.65),transparent);color:#fff;font-size:.72rem;padding:14px 10px 8px;opacity:0;transition:.2s;}
+  .gallery-item:hover .cap{opacity:1;}
+
+  /* lightbox */
+  .lightbox{position:fixed;inset:0;background:rgba(20,16,12,.9);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+  .lightbox.show{display:flex;}
+  .lightbox img{max-width:min(90vw,700px);max-height:85vh;border-radius:10px;}
+  .lightbox-close{position:absolute;top:20px;right:26px;color:#fff;font-size:1.8rem;background:none;border:none;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -255,7 +316,10 @@
 <div class="topbar">
   <div class="wrap">
     <span>Melayani area Kudus &amp; sekitarnya</span>
-    <a href="#pesan" id="topbarWaText">WhatsApp: 0882-0065-50939</a>
+    <div class="topbar-right">
+      <a href="#pesan" id="topbarWaText">WhatsApp: 0882-0065-50939</a>
+      <span class="social-inline" id="socialInline"></span>
+    </div>
   </div>
 </div>
 
@@ -266,7 +330,9 @@
     </div>
     <nav class="main">
       <a href="#layanan">Layanan</a>
-      <a href="#cara-pesan">Cara Pesan</a>
+      <a href="#agenda">Agenda</a>
+      <a href="#testimoni">Testimoni</a>
+      <a href="#gallery">Galeri</a>
       <a href="#kontak">Kontak</a>
     </nav>
     <a href="#pesan" class="cta-btn">Pesan Sekarang</a>
@@ -330,6 +396,68 @@
         <p>Dekorasi mobil pengantin dengan bunga &amp; kain, tersedia juga paket sewa mobil pengantin lengkap.</p>
         <span class="pick">Pilih layanan ini →</span>
       </div>
+      <div class="svc-card" data-service="Nafa Snack">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.8H7.5a2 2 0 0 1-2-1.8L4 8Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/></svg>
+        <h3>Nafa Snack</h3>
+        <p>Aneka snack &amp; hampers untuk hajatan, seminar, hingga acara kantor — rasa enak, kemasan rapi &amp; menarik.</p>
+        <span class="pick">Pilih layanan ini →</span>
+      </div>
+      <div class="svc-card" data-service="Sewa Kebaya">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M12 3c-1.2 1.4-2 2.2-2 3.6C10 8 11 9 12 9s2-1 2-2.4C14 5.2 13.2 4.4 12 3Z"/><path d="M8 9 4 20h16L16 9c-1.2 1-2.6 1.5-4 1.5S9.2 10 8 9Z"/></svg>
+        <h3>Sewa Kebaya</h3>
+        <p>Penyewaan kebaya &amp; busana adat untuk wisuda, lamaran, dan acara resmi — banyak pilihan model &amp; ukuran.</p>
+        <span class="pick">Pilih layanan ini →</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="agenda" class="tinted">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Kalender &amp; Agenda</p>
+      <h2>Jadwal &amp; agenda kami</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="agenda-layout">
+      <div class="cal-card">
+        <div class="cal-head">
+          <button type="button" id="calPrev" aria-label="Bulan sebelumnya">‹</button>
+          <span id="calLabel">-</span>
+          <button type="button" id="calNext" aria-label="Bulan berikutnya">›</button>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <p class="cal-legend"><span class="dot"></span> Tanggal ada agenda</p>
+      </div>
+      <div class="agenda-list" id="agendaList">
+        <p class="empty-mini">Memuat agenda...</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="testimoni">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Testimoni</p>
+      <h2>Kata mereka tentang kami</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="testi-grid" id="testiGrid">
+      <p class="empty-mini">Memuat testimoni...</p>
+    </div>
+  </div>
+</section>
+
+<section id="gallery" class="tinted">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="eyebrow">Galeri</p>
+      <h2>Karya &amp; momen pilihan</h2>
+      <div class="divider"></div>
+    </div>
+    <div class="gallery-grid" id="galleryGrid">
+      <p class="empty-mini">Memuat galeri...</p>
     </div>
   </div>
 </section>
@@ -381,6 +509,9 @@
               <div class="chip" data-value="Paket Prewedding">Paket Prewedding</div>
               <div class="chip" data-value="Paket Sinoman">Paket Sinoman</div>
               <div class="chip" data-value="Hias & Sewa Mobil">Hias &amp; Sewa Mobil</div>
+              <div class="chip" data-value="Nafa Snack">Nafa Snack</div>
+              <div class="chip" data-value="Sewa Kebaya">Sewa Kebaya</div>
+              <div class="chip" data-value="Lainnya">Lainnya</div>
             </div>
           </div>
 
@@ -446,8 +577,8 @@
     <div>
       <h4 style="font-size:1.1rem;">Kontak</h4>
       <p id="footerWaText">WhatsApp: 0882-0065-50939</p>
-      <p>Instagram: @rozida.official</p>
       <p>Kudus, Jawa Tengah</p>
+      <div class="footer-social" id="footerSocial"></div>
     </div>
     <div class="foot-divider"></div>
     <div class="bottom">
@@ -456,6 +587,11 @@
     </div>
   </div>
 </footer>
+
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+  <img id="lightboxImg" src="" alt="">
+</div>
 
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
@@ -567,6 +703,151 @@ form.addEventListener('submit', async (e) => {
   // otomatis buka WhatsApp dengan pesan yang sudah terisi
   window.location.href = waUrl;
 });
+
+/* ================= SOSIAL MEDIA ================= */
+const SOCIAL_ICONS = {
+  instagram_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.7 0 3.06.01 4.12.06 1.06.05 1.79.22 2.43.47.66.26 1.22.6 1.77 1.15.55.55.9 1.11 1.15 1.77.25.64.42 1.37.47 2.43C22 8.94 22 9.3 22 12s-.01 3.06-.06 4.12c-.05 1.06-.22 1.79-.47 2.43a4.9 4.9 0 0 1-1.15 1.77 4.9 4.9 0 0 1-1.77 1.15c-.64.25-1.37.42-2.43.47C15.06 21.99 14.7 22 12 22s-3.06-.01-4.12-.06c-1.06-.05-1.79-.22-2.43-.47a4.9 4.9 0 0 1-1.77-1.15 4.9 4.9 0 0 1-1.15-1.77c-.25-.64-.42-1.37-.47-2.43C2.01 15.06 2 14.7 2 12s.01-3.06.06-4.12c.05-1.06.22-1.79.47-2.43.26-.66.6-1.22 1.15-1.77A4.9 4.9 0 0 1 5.45.53C6.09.28 6.82.11 7.88.06 8.94.01 9.3 0 12 0Zm0 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm7.2-11.7a1.64 1.64 0 1 1-3.28 0 1.64 1.64 0 0 1 3.28 0Z" transform="translate(0 2)"/></svg>',
+  tiktok_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 2h-3.2v13.6a2.9 2.9 0 1 1-2.06-2.78V9.6a6.1 6.1 0 1 0 5.26 6.04V8.2a7.6 7.6 0 0 0 4.6 1.55V6.55A4.4 4.4 0 0 1 16.6 2Z"/></svg>',
+  facebook_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/></svg>'
+};
+async function loadSocialLinks(){
+  try{
+    const { data } = await supabase.from('settings').select('key,value').in('key', Object.keys(SOCIAL_ICONS));
+    const links = (data || []).filter(d => d.value);
+    const topbarWrap = document.getElementById('socialInline');
+    const footerWrap = document.getElementById('footerSocial');
+    if (!links.length) return;
+    topbarWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${SOCIAL_ICONS[l.key]}</a>`).join('');
+    footerWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${SOCIAL_ICONS[l.key]}</a>`).join('');
+  }catch(e){ console.error(e); }
+}
+loadSocialLinks();
+
+/* ================= KALENDER / AGENDA ================= */
+let calDate = new Date();
+let agendaDates = new Set();
+let agendaItems = [];
+
+async function loadAgenda(){
+  const { data, error } = await supabase.from('agenda').select('*').order('event_date', { ascending: true });
+  if (error){ console.error(error); return; }
+  agendaItems = data || [];
+  agendaDates = new Set(agendaItems.map(a => a.event_date));
+  renderCalendar();
+  renderAgendaList();
+}
+
+function renderCalendar(){
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  document.getElementById('calLabel').textContent = monthNames[month] + ' ' + year;
+
+  const grid = document.getElementById('calGrid');
+  const dows = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  let html = dows.map(d => `<div class="dow">${d}</div>`).join('');
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="day blank"></div>';
+  for (let d = 1; d <= daysInMonth; d++){
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const classes = ['day'];
+    if (agendaDates.has(dateStr)) classes.push('has-agenda');
+    if (dateStr === todayStr) classes.push('today');
+    html += `<div class="${classes.join(' ')}">${d}</div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function renderAgendaList(){
+  const el = document.getElementById('agendaList');
+  const upcoming = agendaItems.filter(a => a.event_date >= new Date().toISOString().slice(0,10));
+  const list = upcoming.length ? upcoming : agendaItems;
+  if (!list.length){
+    el.innerHTML = '<p class="empty-mini">Belum ada agenda saat ini.</p>';
+    return;
+  }
+  const monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  el.innerHTML = list.map(a => {
+    const d = new Date(a.event_date + 'T00:00:00');
+    return `<div class="agenda-item">
+      <div class="a-date">${d.getDate()}<small>${monthShort[d.getMonth()]}</small></div>
+      <div>
+        <h4>${escapeHtmlPub(a.title)}</h4>
+        <p>${escapeHtmlPub(a.note || '')}</p>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('calPrev').addEventListener('click', () => {
+  calDate.setMonth(calDate.getMonth() - 1);
+  renderCalendar();
+});
+document.getElementById('calNext').addEventListener('click', () => {
+  calDate.setMonth(calDate.getMonth() + 1);
+  renderCalendar();
+});
+loadAgenda();
+
+/* ================= TESTIMONI ================= */
+async function loadTestimonials(){
+  const { data, error } = await supabase.from('testimonials').select('*').eq('published', true).order('created_at', { ascending: false });
+  const el = document.getElementById('testiGrid');
+  if (error){ console.error(error); el.innerHTML = '<p class="empty-mini">Testimoni belum tersedia.</p>'; return; }
+  if (!data || !data.length){
+    el.innerHTML = '<p class="empty-mini">Belum ada testimoni.</p>';
+    return;
+  }
+  el.innerHTML = data.map(t => `
+    <div class="testi-card">
+      <div class="testi-stars">${'★'.repeat(t.rating || 5)}${'☆'.repeat(5 - (t.rating || 5))}</div>
+      <p class="msg">"${escapeHtmlPub(t.message)}"</p>
+      <div class="who">${escapeHtmlPub(t.customer_name)}</div>
+    </div>
+  `).join('');
+}
+loadTestimonials();
+
+/* ================= GALLERY ================= */
+async function loadGallery(){
+  const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+  const el = document.getElementById('galleryGrid');
+  if (error){ console.error(error); el.innerHTML = '<p class="empty-mini">Galeri belum tersedia.</p>'; return; }
+  if (!data || !data.length){
+    el.innerHTML = '<p class="empty-mini">Belum ada foto di galeri.</p>';
+    return;
+  }
+  el.innerHTML = data.map(g => `
+    <div class="gallery-item" data-img="${g.image_url}">
+      <img src="${g.image_url}" alt="${escapeHtmlPub(g.caption || '')}" loading="lazy">
+      ${g.caption ? `<div class="cap">${escapeHtmlPub(g.caption)}</div>` : ''}
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.gallery-item').forEach(item => {
+    item.addEventListener('click', () => {
+      document.getElementById('lightboxImg').src = item.dataset.img;
+      document.getElementById('lightbox').classList.add('show');
+    });
+  });
+}
+loadGallery();
+
+document.getElementById('lightboxClose').addEventListener('click', () => {
+  document.getElementById('lightbox').classList.remove('show');
+});
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'lightbox') document.getElementById('lightbox').classList.remove('show');
+});
+
+function escapeHtmlPub(s){
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 </script>
 </body>
 </html>
