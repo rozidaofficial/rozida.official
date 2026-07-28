@@ -616,6 +616,9 @@ document.getElementById('year').textContent = new Date().getFullYear();
 const SUPABASE_URL = "https://ttjyeyisquvamzhdzuke.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fEb55e3v6NZdx-TPkgoA_Q_2d_ixyUB";
 /* ============================================ */
+function normalizeSupabaseUrl(url) {
+  return String(url || '').trim().replace(/\/+$/, '').replace(/\/rest\/v1\/?$/, '');
+}
 const ADMIN_WHATSAPP_FALLBACK = "62882006550939"; // dipakai kalau nomor di menu admin belum diisi
 const STORAGE_KEY_ORDERS = 'rozida.orders';
 const STORAGE_KEY_GALLERY = 'rozida.gallery';
@@ -695,7 +698,7 @@ if (!window.supabase) {
   throw new Error('Supabase library tidak tersedia, script dihentikan.');
 }
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(normalizeSupabaseUrl(SUPABASE_URL), SUPABASE_ANON_KEY);
 
 let ADMIN_WHATSAPP = ADMIN_WHATSAPP_FALLBACK;
 
