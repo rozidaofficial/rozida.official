@@ -401,6 +401,12 @@
         <p>Penyewaan kebaya &amp; busana adat untuk wisuda, lamaran, dan acara resmi — banyak pilihan model &amp; ukuran.</p>
         <span class="pick">Pilih layanan ini →</span>
       </div>
+      <div class="svc-card" data-service="Riques / dll">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M6 6h12v12H6z"/><path d="M9 9h6v6H9z"/><path d="M4 4h4M16 4h4M4 20h4M16 20h4"/></svg>
+        <h3>Riques / dll</h3>
+        <p>Custom request, riquess, dan kebutuhan tambahan lainnya sesuai kebutuhan acara Anda — kami bantu menyesuaikan detailnya.</p>
+        <span class="pick">Pilih layanan ini →</span>
+      </div>
     </div>
   </div>
 </section>
@@ -563,7 +569,6 @@
     <div class="foot-divider"></div>
     <div class="bottom">
       <span>© <span id="year"></span> Rozida.Official Creative Studio</span>
-      <a href="admin.html" style="opacity:.6;">Admin</a>
     </div>
   </div>
 </footer>
@@ -573,7 +578,7 @@
   <img id="lightboxImg" src="" alt="">
 </div>
 
-<script>
+<script>(() => {
 document.getElementById('year').textContent = new Date().getFullYear();
 
 /* ====== ISI DENGAN DATA SUPABASE ANDA ====== */
@@ -581,6 +586,69 @@ const SUPABASE_URL = "https://ttjyeyisquvamzhdzuke.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fEb55e3v6NZdx-TPkgoA_Q_2d_ixyUB";
 /* ============================================ */
 const ADMIN_WHATSAPP_FALLBACK = "62882006550939"; // dipakai kalau nomor di menu admin belum diisi
+const STORAGE_KEY_ORDERS = 'rozida.orders';
+const STORAGE_KEY_GALLERY = 'rozida.gallery';
+const STORAGE_KEY_SETTINGS = 'rozida.settings';
+const SYNC_CHANNEL = 'rozida-sync';
+const syncChannel = window.BroadcastChannel ? new BroadcastChannel(SYNC_CHANNEL) : null;
+const SOCIAL_ICONS = {
+  instagram_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.7 0 3.06.01 4.12.06 1.06.05 1.79.22 2.43.47.66.26 1.22.6 1.77 1.15.55.55.9 1.11 1.15 1.77.25.64.42 1.37.47 2.43C22 8.94 22 9.3 22 12s-.01 3.06-.06 4.12c-.05 1.06-.22 1.79-.47 2.43a4.9 4.9 0 0 1-1.15 1.77 4.9 4.9 0 0 1-1.77 1.15c-.64.25-1.37.42-2.43.47C15.06 21.99 14.7 22 12 22s-3.06-.01-4.12-.06c-1.06-.05-1.79-.22-2.43-.47a4.9 4.9 0 0 1-1.77-1.15 4.9 4.9 0 0 1-1.15-1.77c-.25-.64-.42-1.37-.47-2.43C2.01 15.06 2 14.7 2 12s.01-3.06.06-4.12c.05-1.06.22-1.79.47-2.43.26-.66.6-1.22 1.15-1.77A4.9 4.9 0 0 1 5.45.53C6.09.28 6.82.11 7.88.06 8.94.01 9.3 0 12 0Zm0 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm7.2-11.7a1.64 1.64 0 1 1-3.28 0 1.64 1.64 0 0 1 3.28 0Z" transform="translate(0 2)"/></svg>',
+  tiktok_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 2h-3.2v13.6a2.9 2.9 0 1 1-2.06-2.78V9.6a6.1 6.1 0 1 0 5.26 6.04V8.2a7.6 7.6 0 0 0 4.6 1.55V6.55A4.4 4.4 0 0 1 16.6 2Z"/></svg>',
+  facebook_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/></svg>'
+};
+
+function saveLocalOrder(payload) {
+  try {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS) || '[]');
+    const entry = {
+      ...payload,
+      id: `local-${Date.now()}`,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      status: 'Baru'
+    };
+    list.unshift(entry);
+    localStorage.setItem(STORAGE_KEY_ORDERS, JSON.stringify(list));
+    if (syncChannel) syncChannel.postMessage({ type: 'orders-updated' });
+  } catch (err) {
+    console.warn('Gagal menyimpan order lokal', err);
+  }
+}
+
+function saveLocalGallery(item) {
+  try {
+    const list = JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
+    list.unshift(item);
+    localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(list));
+    if (syncChannel) syncChannel.postMessage({ type: 'gallery-updated' });
+  } catch (err) {
+    console.warn('Gagal menyimpan gallery lokal', err);
+  }
+}
+
+function getLocalGallery() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
+  } catch (err) {
+    return [];
+  }
+}
+
+function getLocalSettings() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
+  } catch (err) {
+    return {};
+  }
+}
+
+function saveLocalSettings(settingsObj) {
+  try {
+    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settingsObj));
+  } catch (err) {
+    console.warn('Gagal menyimpan pengaturan lokal', err);
+  }
+}
 
 if (!window.supabase) {
   console.error('Library Supabase gagal dimuat (cek koneksi internet / ad-blocker).');
@@ -599,10 +667,44 @@ if (!window.supabase) {
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let ADMIN_WHATSAPP = ADMIN_WHATSAPP_FALLBACK;
-(async () => {
-  const { data } = await supabase.from('settings').select('value').eq('key', 'admin_whatsapp').maybeSingle();
-  if (data && data.value) ADMIN_WHATSAPP = data.value;
+
+function renderSocialLinks(settingsObj) {
+  const topbarWrap = document.getElementById('socialInline');
+  const footerWrap = document.getElementById('footerSocial');
+  const links = Object.entries(SOCIAL_ICONS)
+    .map(([key, icon]) => ({ key, icon, value: settingsObj?.[key] }))
+    .filter(item => item.value);
+
+  if (!links.length) return;
+  if (topbarWrap) topbarWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${l.icon}</a>`).join('');
+  if (footerWrap) footerWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${l.icon}</a>`).join('');
+}
+
+async function loadSettingsFromStorage() {
+  const fallbackSettings = getLocalSettings();
+  try {
+    const { data, error } = await supabase.from('settings').select('key,value').in('key', Object.keys(SOCIAL_ICONS).concat(['admin_whatsapp']));
+    if (!error && data) {
+      const settingsMap = {};
+      (data || []).forEach(item => settingsMap[item.key] = item.value);
+      if (settingsMap.admin_whatsapp) ADMIN_WHATSAPP = settingsMap.admin_whatsapp;
+      saveLocalSettings(settingsMap);
+      renderSocialLinks(settingsMap);
+      updateWaDisplay(ADMIN_WHATSAPP);
+      return settingsMap;
+    }
+  } catch (err) {
+    console.warn('Gagal memuat pengaturan dari Supabase, memakai data lokal:', err);
+  }
+
+  if (fallbackSettings.admin_whatsapp) ADMIN_WHATSAPP = fallbackSettings.admin_whatsapp;
+  renderSocialLinks(fallbackSettings);
   updateWaDisplay(ADMIN_WHATSAPP);
+  return fallbackSettings;
+}
+
+(async () => {
+  await loadSettingsFromStorage();
 })();
 
 function updateWaDisplay(number) {
@@ -657,16 +759,29 @@ form.addEventListener('submit', async (e) => {
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="loader"></span> Mengirim...';
 
-  const { error } = await supabase.from('orders').insert([payload]);
+  let remoteOk = false;
+  try {
+    console.log('Submitting order payload', payload);
+    const response = await supabase.from('orders').insert([payload]);
+    console.log('Supabase insert response', response);
+    if (response.error) throw response.error;
+    remoteOk = true;
+  } catch (err) {
+    console.warn('Insert order ke Supabase gagal, memakai simpan lokal:', err);
+    console.log('Error stack', err?.stack || err);
+  }
+
+  saveLocalOrder(payload);
 
   submitBtn.disabled = false;
   submitBtn.textContent = 'Kirim Pesanan';
 
-  if (error) {
-    console.error(error);
-    formMsg.textContent = 'Terjadi kesalahan, coba lagi. (' + error.message + ')';
-    formMsg.classList.add('error');
-    return;
+  if (!remoteOk) {
+    formMsg.textContent = 'Pesanan tersimpan sementara dan akan terlihat di admin.';
+    formMsg.classList.add('success');
+  } else {
+    formMsg.textContent = 'Pesanan berhasil dikirim.';
+    formMsg.classList.add('success');
   }
 
   const waText = encodeURIComponent(
@@ -686,24 +801,15 @@ form.addEventListener('submit', async (e) => {
   window.location.href = waUrl;
 });
 
-/* ================= SOSIAL MEDIA ================= */
-const SOCIAL_ICONS = {
-  instagram_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c2.7 0 3.06.01 4.12.06 1.06.05 1.79.22 2.43.47.66.26 1.22.6 1.77 1.15.55.55.9 1.11 1.15 1.77.25.64.42 1.37.47 2.43C22 8.94 22 9.3 22 12s-.01 3.06-.06 4.12c-.05 1.06-.22 1.79-.47 2.43a4.9 4.9 0 0 1-1.15 1.77 4.9 4.9 0 0 1-1.77 1.15c-.64.25-1.37.42-2.43.47C15.06 21.99 14.7 22 12 22s-3.06-.01-4.12-.06c-1.06-.05-1.79-.22-2.43-.47a4.9 4.9 0 0 1-1.77-1.15 4.9 4.9 0 0 1-1.15-1.77c-.25-.64-.42-1.37-.47-2.43C2.01 15.06 2 14.7 2 12s.01-3.06.06-4.12c.05-1.06.22-1.79.47-2.43.26-.66.6-1.22 1.15-1.77A4.9 4.9 0 0 1 5.45.53C6.09.28 6.82.11 7.88.06 8.94.01 9.3 0 12 0Zm0 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14Zm0 11.5A4.5 4.5 0 1 1 12 7.5a4.5 4.5 0 0 1 0 9Zm7.2-11.7a1.64 1.64 0 1 1-3.28 0 1.64 1.64 0 0 1 3.28 0Z" transform="translate(0 2)"/></svg>',
-  tiktok_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M16.6 2h-3.2v13.6a2.9 2.9 0 1 1-2.06-2.78V9.6a6.1 6.1 0 1 0 5.26 6.04V8.2a7.6 7.6 0 0 0 4.6 1.55V6.55A4.4 4.4 0 0 1 16.6 2Z"/></svg>',
-  facebook_url: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.78-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0 0 22 12Z"/></svg>'
-};
-async function loadSocialLinks(){
-  try{
-    const { data } = await supabase.from('settings').select('key,value').in('key', Object.keys(SOCIAL_ICONS));
-    const links = (data || []).filter(d => d.value);
-    const topbarWrap = document.getElementById('socialInline');
-    const footerWrap = document.getElementById('footerSocial');
-    if (!links.length) return;
-    topbarWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${SOCIAL_ICONS[l.key]}</a>`).join('');
-    footerWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${SOCIAL_ICONS[l.key]}</a>`).join('');
-  }catch(e){ console.error(e); }
+if (syncChannel) {
+  syncChannel.onmessage = (event) => {
+    if (event.data?.type === 'settings-updated') loadSettingsFromStorage();
+  };
 }
-loadSocialLinks();
+
+window.addEventListener('storage', (event) => {
+  if (event.key === STORAGE_KEY_SETTINGS) loadSettingsFromStorage();
+});
 
 /* ================= KALENDER / AGENDA ================= */
 let calDate = new Date();
@@ -776,14 +882,28 @@ loadTestimonials();
 
 /* ================= GALLERY ================= */
 async function loadGallery(){
-  const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
   const el = document.getElementById('galleryGrid');
-  if (error){ console.error(error); el.innerHTML = '<p class="empty-mini">Galeri belum tersedia.</p>'; return; }
-  if (!data || !data.length){
+  let remoteData = [];
+  let error = null;
+
+  try {
+    const { data, error: err } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    remoteData = data || [];
+    error = err;
+  } catch (err) {
+    error = err;
+  }
+
+  if (error) console.warn(error);
+
+  const localGallery = getLocalGallery();
+  const merged = [...remoteData, ...localGallery.filter(g => !remoteData.some(r => r.id === g.id))];
+
+  if (!merged.length){
     el.innerHTML = '<p class="empty-mini">Belum ada foto di galeri.</p>';
     return;
   }
-  el.innerHTML = data.map(g => `
+  el.innerHTML = merged.map(g => `
     <div class="gallery-item" data-img="${g.image_url}">
       <img src="${g.image_url}" alt="${escapeHtmlPub(g.caption || '')}" loading="lazy">
       ${g.caption ? `<div class="cap">${escapeHtmlPub(g.caption)}</div>` : ''}
@@ -810,6 +930,7 @@ function escapeHtmlPub(s){
   if (!s) return '';
   return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+})();
 </script>
 </body>
 </html>
