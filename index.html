@@ -264,26 +264,19 @@
   .empty-mini{color:var(--ink-soft);font-size:.88rem;text-align:center;grid-column:1/-1;padding:20px;}
 
   /* agenda / kalender */
-  .agenda-layout{display:grid;grid-template-columns:1fr 1.15fr;gap:26px;align-items:start;}
-  @media(max-width:800px){.agenda-layout{grid-template-columns:1fr;}}
-  .cal-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:20px 20px 16px;}
-  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-family:'Cormorant Garamond',serif;font-size:1.15rem;}
-  .cal-head button{background:var(--ivory);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:1rem;color:var(--ink);}
-  .cal-head button:hover{border-color:var(--gold);}
-  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center;}
-  .cal-grid .dow{font-size:.68rem;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;padding-bottom:6px;}
-  .cal-grid .day{position:relative;font-size:.82rem;padding:8px 0;border-radius:8px;color:var(--ink);}
-  .cal-grid .day.blank{visibility:hidden;}
-  .cal-grid .day.has-agenda{background:linear-gradient(135deg,rgba(184,137,74,.15),rgba(233,205,142,.25));font-weight:500;color:var(--gold-deep);}
-  .cal-grid .day.today{outline:1px solid var(--wine);}
-  .cal-legend{font-size:.76rem;color:var(--ink-soft);margin:12px 0 0;display:flex;align-items:center;gap:6px;}
-  .cal-legend .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);display:inline-block;}
-  .agenda-list{display:flex;flex-direction:column;gap:12px;max-height:400px;overflow-y:auto;}
-  .agenda-item{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;gap:14px;align-items:flex-start;}
-  .agenda-item .a-date{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--gold-deep);min-width:64px;text-align:center;}
-  .agenda-item .a-date small{display:block;font-family:'Jost',sans-serif;font-size:.62rem;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);}
-  .agenda-item h4{margin:0 0 4px;font-size:1rem;font-family:'Jost',sans-serif;font-weight:500;}
-  .agenda-item p{margin:0;font-size:.82rem;color:var(--ink-soft);}
+  .cal-standalone{max-width:640px;margin:0 auto;}
+  .cal-card{background:var(--white);border:1px solid var(--border);border-radius:20px;padding:34px 34px 28px;box-shadow:0 30px 60px -45px rgba(43,36,29,.35);}
+  @media(max-width:600px){.cal-card{padding:24px 16px 20px;}}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding-bottom:18px;border-bottom:1px dashed var(--border);}
+  .cal-head span{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:600;}
+  .cal-head button{background:var(--ivory);border:1px solid var(--border);border-radius:50%;width:38px;height:38px;cursor:pointer;font-size:1rem;color:var(--ink);transition:.2s;}
+  .cal-head button:hover{border-color:var(--gold);background:var(--white);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-grid .dow{font-size:.68rem;letter-spacing:.03em;color:var(--ink-soft);text-transform:uppercase;text-align:center;padding-bottom:8px;font-weight:500;}
+  .cal-grid .day{position:relative;aspect-ratio:1/0.82;border:1px solid var(--border);border-radius:10px;padding:8px;font-size:.85rem;color:var(--ink);background:var(--ivory);}
+  .cal-grid .day.blank{visibility:hidden;border:none;background:none;}
+  .cal-grid .day.has-agenda::after{content:"";position:absolute;bottom:8px;right:8px;width:6px;height:6px;border-radius:50%;background:var(--gold);}
+  .cal-grid .day.today{border:2px solid var(--gold-deep);font-weight:600;}
 
   /* testimoni */
   .testi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;}
@@ -415,22 +408,19 @@
 <section id="agenda" class="tinted">
   <div class="wrap">
     <div class="section-head">
-      <p class="eyebrow">Kalender &amp; Agenda</p>
-      <h2>Jadwal &amp; agenda kami</h2>
+      <p class="eyebrow">Jadwal Ketersediaan</p>
+      <h2>Kalender &amp; Agenda</h2>
       <div class="divider"></div>
+      <p>Tanggal bertitik menandakan sudah ada jadwal acara. Hubungi admin untuk memastikan ketersediaan tanggal yang Anda inginkan.</p>
     </div>
-    <div class="agenda-layout">
+    <div class="cal-standalone">
       <div class="cal-card">
         <div class="cal-head">
-          <button type="button" id="calPrev" aria-label="Bulan sebelumnya">‹</button>
+          <button type="button" id="calPrev" aria-label="Bulan sebelumnya">←</button>
           <span id="calLabel">-</span>
-          <button type="button" id="calNext" aria-label="Bulan berikutnya">›</button>
+          <button type="button" id="calNext" aria-label="Bulan berikutnya">→</button>
         </div>
         <div class="cal-grid" id="calGrid"></div>
-        <p class="cal-legend"><span class="dot"></span> Tanggal ada agenda</p>
-      </div>
-      <div class="agenda-list" id="agendaList">
-        <p class="empty-mini">Memuat agenda...</p>
       </div>
     </div>
   </div>
@@ -734,7 +724,6 @@ async function loadAgenda(){
   agendaItems = data || [];
   agendaDates = new Set(agendaItems.map(a => a.event_date));
   renderCalendar();
-  renderAgendaList();
 }
 
 function renderCalendar(){
@@ -744,10 +733,12 @@ function renderCalendar(){
   document.getElementById('calLabel').textContent = monthNames[month] + ' ' + year;
 
   const grid = document.getElementById('calGrid');
-  const dows = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  const dows = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
   let html = dows.map(d => `<div class="dow">${d}</div>`).join('');
 
-  const firstDay = new Date(year, month, 1).getDay();
+  // Senin = awal pekan (getDay(): 0=Min...6=Sab, digeser jadi 0=Sen...6=Min)
+  const rawFirstDay = new Date(year, month, 1).getDay();
+  const firstDay = (rawFirstDay + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayStr = new Date().toISOString().slice(0,10);
 
@@ -760,27 +751,6 @@ function renderCalendar(){
     html += `<div class="${classes.join(' ')}">${d}</div>`;
   }
   grid.innerHTML = html;
-}
-
-function renderAgendaList(){
-  const el = document.getElementById('agendaList');
-  const upcoming = agendaItems.filter(a => a.event_date >= new Date().toISOString().slice(0,10));
-  const list = upcoming.length ? upcoming : agendaItems;
-  if (!list.length){
-    el.innerHTML = '<p class="empty-mini">Belum ada agenda saat ini.</p>';
-    return;
-  }
-  const monthShort = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-  el.innerHTML = list.map(a => {
-    const d = new Date(a.event_date + 'T00:00:00');
-    return `<div class="agenda-item">
-      <div class="a-date">${d.getDate()}<small>${monthShort[d.getMonth()]}</small></div>
-      <div>
-        <h4>${escapeHtmlPub(a.title)}</h4>
-        <p>${escapeHtmlPub(a.note || '')}</p>
-      </div>
-    </div>`;
-  }).join('');
 }
 
 document.getElementById('calPrev').addEventListener('click', () => {
