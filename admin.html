@@ -1033,9 +1033,13 @@ function renderPaymentAccountsForm() {
   const container = document.getElementById('paymentAccountsContainer');
   if (!container) return;
 
+  // optional minCount allows callers (like the Add button) to force rendering more blocks
+  const args = Array.from(arguments);
+  const minCount = Number(args[0] || 0) || 0;
   const currentValues = getPaymentAccountValues();
   const valuesByIndex = Object.fromEntries(currentValues.map((item) => [item.index, item]));
-  const targetCount = Math.max(1, Math.max(getConfiguredPaymentAccountCount(settingsMap), currentValues.length ? Math.max(...currentValues.map((item) => item.index)) : 0));
+  const inferredCount = Math.max(getConfiguredPaymentAccountCount(settingsMap), currentValues.length ? Math.max(...currentValues.map((item) => item.index)) : 0);
+  const targetCount = Math.max(1, Math.max(inferredCount, minCount));
 
   container.innerHTML = '';
   for (let i = 1; i <= targetCount; i++) {
@@ -1154,11 +1158,8 @@ document.getElementById('addPaymentAccountBtn').addEventListener('click', () => 
   if (nextIndex > MAX_PAYMENT_ACCOUNTS) return;
   const container = document.getElementById('paymentAccountsContainer');
   if (!container) return;
-  renderPaymentAccountsForm();
-  const blocks = document.querySelectorAll('.payment-account-block');
-  if (blocks.length < nextIndex) {
-    renderPaymentAccountsForm();
-  }
+  // ask renderer to ensure at least nextIndex blocks exist
+  renderPaymentAccountsForm(nextIndex);
 });
 
 document.getElementById('settingsBtn').addEventListener('click', async () => {
