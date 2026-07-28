@@ -973,17 +973,24 @@ function normalizePhone(raw) {
   return digits;
 }
 
-function isSettingsSyncSchemaError(err) {
+function getSettingsSyncErrorMessage(err) {
   const message = (err?.message || String(err || '')).toLowerCase();
-  const isSchemaError = message.includes('record "new"')
-    || message.includes('relation "settings" does not exist')
-    || (message.includes('column') && message.includes('does not exist'))
-    || message.includes('does not exist');
+  const details = err?.details || err?.hint || '';
 
-  if (isSchemaError) {
-    console.warn('Settings sync schema error detected:', err);
+  if (message.includes('relation "settings" does not exist')) {
+    return 'Gagal menyimpan pengaturan ke Supabase: tabel settings tidak ditemukan. Jalankan `supabase-setup-final.sql`.';
   }
-  return isSchemaError;
+  if (message.includes('column') && message.includes('does not exist')) {
+    return 'Gagal menyimpan pengaturan ke Supabase: kolom pada tabel settings tidak ditemukan. Jalankan `supabase-setup-final.sql`.';
+  }
+  if (message.includes('permission denied') || details.toLowerCase().includes('permission denied')) {
+    return 'Gagal menyimpan pengaturan ke Supabase: akses ditolak. Pastikan Anda sudah login dan policy Supabase mengizinkan write untuk authenticated user.';
+  }
+  if (message.includes('jwt') || message.includes('authorization') || message.includes('no auth token')) {
+    return 'Gagal menyimpan pengaturan ke Supabase: autentikasi tidak valid. Silakan login ulang.';
+  }
+
+  return 'Gagal menyimpan pengaturan ke Supabase: ' + (err?.message || String(err || '')).trim();
 }
 
 const MAX_PAYMENT_ACCOUNTS = 5;
@@ -1208,12 +1215,9 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
 
   if (remoteError) {
-    if (isSettingsSyncSchemaError(remoteError)) {
-      settingsMsg.textContent = 'Gagal menyimpan pengaturan ke Supabase: skema tabel belum sesuai.';
-    } else {
-      settingsMsg.textContent = 'Gagal menyimpan pengaturan ke Supabase: ' + (remoteError.message || remoteError);
-    }
+    settingsMsg.textContent = getSettingsSyncErrorMessage(remoteError);
     settingsMsg.style.color = '#a13232';
+    console.error('Settings upsert failed:', remoteError);
     return;
   }
 
