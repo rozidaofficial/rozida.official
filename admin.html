@@ -1711,7 +1711,7 @@ async function loadInvoicesAdmin(){
         <span class="badge ${inv.status === 'paid' ? 'badge-selesai' : 'badge-diproses'}">${inv.status === 'paid' ? 'Lunas' : 'Belum Lunas'}</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
           <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
-          ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Lihat PDF</a>` : ''}
+          ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Buka PDF</a>` : ''}
           <button class="mini-btn" data-id="${inv.id}" data-action="regen-pdf">${inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF'}</button>
           <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
           <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
