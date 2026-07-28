@@ -1711,8 +1711,7 @@ async function loadInvoicesAdmin(){
         <span class="badge ${inv.status === 'paid' ? 'badge-selesai' : 'badge-diproses'}">${inv.status === 'paid' ? 'Lunas' : 'Belum Lunas'}</span>
         <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;">
           <button class="mini-btn" data-id="${inv.id}" data-action="send-invoice">Kirim WA</button>
-          ${inv.pdf_url ? `<a class="mini-btn" href="${inv.pdf_url}" target="_blank" rel="noopener">Buka PDF</a>` : ''}
-          <button class="mini-btn" data-id="${inv.id}" data-action="regen-pdf">${inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF'}</button>
+          <button class="mini-btn" data-id="${inv.id}" data-action="print-invoice">Cetak PDF</button>
           <button class="mini-btn" data-id="${inv.id}" data-action="toggle-invoice-status">${inv.status === 'paid' ? 'Tandai Belum Lunas' : 'Tandai Lunas'}</button>
           <button class="mini-btn danger" data-id="${inv.id}" data-action="del-invoice">Hapus</button>
         </div>
@@ -1725,18 +1724,14 @@ async function loadInvoicesAdmin(){
       const inv = allInvoices.find(x => x.id === btn.dataset.id);
       if (!inv) return;
       if (btn.dataset.action === 'send-invoice') sendInvoiceWhatsApp(inv);
-      if (btn.dataset.action === 'regen-pdf'){
-            btn.disabled = true; btn.textContent = 'Memproses...';
+      if (btn.dataset.action === 'print-invoice'){
+            btn.disabled = true; btn.textContent = 'Membuka...';
             try {
-              const pdfRes = await generateInvoicePDF(inv);
-              if (pdfRes && pdfRes.url){
-                await supabase.from('invoices').update({ pdf_url: pdfRes.url, storage_path: pdfRes.path }).eq('id', inv.id);
-                loadInvoicesAdmin();
-              }
+              openInvoicePrintView(inv);
             } catch (err){
-              alert('Gagal membuat PDF: ' + (err.message || err));
+              alert('Gagal membuka tampilan invoice: ' + (err.message || err));
             } finally {
-              btn.disabled = false; btn.textContent = inv.pdf_url ? 'Regenerate PDF' : 'Buat PDF';
+              btn.disabled = false; btn.textContent = 'Cetak PDF';
             }
       }
       if (btn.dataset.action === 'del-invoice'){
@@ -1810,123 +1805,90 @@ invoiceForm.addEventListener('submit', async (e) => {
     return;
   }
 
-  // try generate PDF and upload to storage; save pdf_url back to invoice
-  try {
-    if (window.html2canvas && window.jspdf){
-      const pdfRes = await generateInvoicePDF(inserted);
-      if (pdfRes && pdfRes.url){
-        await supabase.from('invoices').update({ pdf_url: pdfRes.url }).eq('id', inserted.id);
-      }
-    }
-  } catch (err){
-    console.warn('Gagal membuat/unggah PDF invoice:', err);
-  }
-
-  invoiceFormMsg.textContent = 'Invoice tersimpan.';
+  invoiceFormMsg.textContent = 'Invoice tersimpan. Anda bisa mencetaknya sebagai PDF nanti.';
   invoiceFormMsg.style.color = '#2f7a4f';
   invoiceForm.reset();
   loadInvoicesAdmin();
 });
 
-// generate PDF from invoice data, upload to storage, return public url
-async function generateInvoicePDF(inv){
+function openInvoicePrintView(inv){
   const paymentDetails = getInvoicePaymentDetails(inv);
-  const container = document.createElement('div');
-  container.style.position = 'absolute';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '780px';
-  container.style.background = '#ffffff';
-  container.style.color = '#1f2937';
-  container.innerHTML = `
-    <div style="padding:34px 36px;font-family:Inter,Arial,Helvetica,sans-serif;background:#fff;color:#1f2937;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:18px;border-bottom:1px solid #e7e7e7;">
-        <div>
-          <div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#b8894a;font-weight:700;">Rozida.Official</div>
-          <h2 style="margin:6px 0 4px;font-size:24px;color:#1f2937;">Invoice Pembayaran</h2>
-          <div style="font-size:13px;color:#6b7280;">Dibuat pada ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
-        </div>
-        <div style="text-align:right;">
-          <div style="font-size:12px;color:#6b7280;">Invoice No.</div>
-          <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.id || '-')}</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px;">
-        <div>
-          <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Pelanggan</div>
-          <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.customer_name || '-')}</div>
-          <div style="font-size:13px;color:#4b5563;margin-top:4px;">${escapeHtml(inv.phone || '-')}</div>
-        </div>
-        <div style="background:#f7f8fb;padding:16px;border-radius:12px;">
-          <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Status</div>
-          <div style="font-size:15px;font-weight:700;color:${inv.status === 'paid' ? '#1f7a54' : '#a13232'};">${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}</div>
-          <div style="font-size:13px;color:#6b7280;margin-top:6px;">Total Pembayaran</div>
-          <div style="font-size:20px;font-weight:700;">Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</div>
-        </div>
-      </div>
-      <div style="margin-top:22px;border:1px solid #ececec;border-radius:12px;overflow:hidden;">
-        <div style="padding:12px 16px;background:#f7f8fb;font-weight:700;font-size:14px;">Rincian Pesanan</div>
-        <div style="padding:16px;">
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e7e7e7;gap:12px;">
-            <span style="color:#6b7280;">Deskripsi</span>
-            <strong style="text-align:right;">${escapeHtml(inv.description || '-')}</strong>
+  const html = `<!doctype html>
+  <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Invoice ${escapeHtml(inv.customer_name || 'Rozida')}</title>
+      <style>
+        body { font-family: Inter, Arial, Helvetica, sans-serif; margin: 0; padding: 24px; color: #1f2937; background: #fff; }
+        .wrap { max-width: 800px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 16px; padding: 28px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #e5e7eb; }
+        .brand { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #b8894a; font-weight: 700; }
+        .title { margin: 6px 0 4px; font-size: 24px; }
+        .meta { font-size: 13px; color: #6b7280; }
+        .card { margin-top: 18px; border: 1px solid #ececec; border-radius: 12px; padding: 16px; }
+        .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e7e7e7; gap: 12px; }
+        .row:last-child { border-bottom: 0; }
+        .label { color: #6b7280; }
+        .value { text-align: right; font-weight: 700; }
+        .pill { background: #f7f8fb; padding: 14px; border-radius: 12px; }
+        .actions { margin-top: 20px; display: flex; gap: 10px; }
+        .btn { border: 1px solid #d1d5db; background: #fff; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+        .no-print { display: block; }
+        @media print { body { padding: 0; } .no-print { display: none !important; } .wrap { border: 0; border-radius: 0; padding: 0; } }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <div class="header">
+          <div>
+            <div class="brand">Rozida.Official</div>
+            <h2 class="title">Invoice Pembayaran</h2>
+            <div class="meta">Dibuat pada ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
           </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e7e7e7;gap:12px;">
-            <span style="color:#6b7280;">Jumlah</span>
-            <strong>Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</strong>
-          </div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;gap:12px;">
-            <span style="color:#6b7280;">Metode Pembayaran</span>
-            <strong>${paymentDetails.bankAccounts.length ? 'Transfer Bank / QRIS' : 'Belum ditentukan'}</strong>
+          <div style="text-align:right;">
+            <div class="meta">Invoice No.</div>
+            <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.id || '-')}</div>
           </div>
         </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px;">
+          <div class="card">
+            <div class="meta" style="margin-bottom:6px;">Pelanggan</div>
+            <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.customer_name || '-')}</div>
+            <div style="margin-top:4px;color:#4b5563;">${escapeHtml(inv.phone || '-')}</div>
+          </div>
+          <div class="card pill">
+            <div class="meta" style="margin-bottom:6px;">Status</div>
+            <div style="font-size:15px;font-weight:700;color:${inv.status === 'paid' ? '#1f7a54' : '#a13232'};">${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}</div>
+            <div class="meta" style="margin-top:6px;">Total Pembayaran</div>
+            <div style="font-size:20px;font-weight:700;">Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <div class="meta" style="margin-bottom:6px;">Rincian Pesanan</div>
+          <div class="row"><span class="label">Deskripsi</span><span class="value">${escapeHtml(inv.description || '-')}</span></div>
+          <div class="row"><span class="label">Jumlah</span><span class="value">Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</span></div>
+          <div class="row"><span class="label">Metode Pembayaran</span><span class="value">${paymentDetails.bankAccounts.length ? 'Transfer Bank' : 'Belum ditentukan'}</span></div>
+        </div>
+        ${paymentDetails.bankAccounts.length ? `<div class="card"><div class="meta" style="margin-bottom:8px;">Rekening</div><div style="font-size:13px;line-height:1.6;color:#374151;">${escapeHtml(paymentDetails.bankAccounts.join(' | '))}</div></div>` : ''}
+        <div class="actions no-print">
+          <button class="btn" onclick="window.print()">Cetak ke PDF</button>
+          <button class="btn" onclick="window.close()">Tutup</button>
+        </div>
       </div>
-      ${paymentDetails.bankAccounts.length ? `
-      <div style="margin-top:16px;border:1px solid #ececec;border-radius:12px;padding:16px;">
-        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Rekening</div>
-        <div style="font-size:13px;line-height:1.6;color:#374151;">${escapeHtml(paymentDetails.bankAccounts.join(' | '))}</div>
-      </div>` : ''}
-      <div style="margin-top:24px;color:#6b7280;font-size:12px;line-height:1.6;">
-        Terima kasih telah mempercayakan pesanan Anda kepada Rozida.Official.<br/>
-        Silakan simpan invoice ini sebagai bukti pembayaran.
-      </div>
-    </div>`;
-  document.body.appendChild(container);
+    </body>
+  </html>`;
 
-  try {
-    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' });
-    const imgData = canvas.toDataURL('image/png');
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p','pt','a4');
-    const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    const blob = pdf.output('blob');
-    const path = `invoices/${Date.now()}_${inv.id}.pdf`;
-    const { error: upErr } = await supabase.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: false });
-    if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
-    return { url: pub.publicUrl, path };
-  } catch (err) {
-    const pdf = new jsPDF('p','pt','a4');
-    pdf.setFontSize(14);
-    pdf.text('Rozida.Official', 40, 40);
-    pdf.setFontSize(12);
-    pdf.text('Invoice Pembayaran', 40, 62);
-    pdf.text(`Nama: ${inv.customer_name || '-'}`, 40, 90);
-    pdf.text(`No. WA: ${inv.phone || '-'}`, 40, 108);
-    pdf.text(`Rincian: ${inv.description || '-'}`, 40, 126);
-    pdf.text(`Jumlah: Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}`, 40, 144);
-    pdf.text(`Status: ${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}`, 40, 162);
-    const blob = pdf.output('blob');
-    const path = `invoices/${Date.now()}_${inv.id}.pdf`;
-    const { error: upErr } = await supabase.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: false });
-    if (upErr) throw upErr;
-    const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
-    return { url: pub.publicUrl, path };
-  } finally {
-    container.remove();
+  const printWindow = window.open('', '_blank', 'width=900,height=1100');
+  if (!printWindow) {
+    throw new Error('Pop-up diblokir. Izinkan pop-up browser untuk mencetak invoice.');
   }
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => {
+    try { printWindow.print(); } catch (err) { console.warn('Gagal memicu print:', err); }
+  }, 300);
 }
 
 function buildInvoiceMessage(inv){
@@ -1942,7 +1904,7 @@ function buildInvoiceMessage(inv){
     if (paymentDetails.bankAccounts.length) {
       paymentDetails.bankAccounts.forEach((account) => lines.push(`- Transfer Bank: ${account}`));
     }
-    lines.push('- Rekening telah tercantum di dalam file PDF invoice');
+    lines.push('- Rekening dapat dicetak dari tampilan invoice ini');
   }
   lines.push('');
   lines.push('Terima kasih telah memesan di Rozida.Official 🌷');
@@ -1953,23 +1915,7 @@ async function sendInvoiceWhatsApp(inv){
   await loadSettingsMap();
   const phoneClean = (inv.phone || '').replace(/[^0-9]/g, '').replace(/^0/, '62');
 
-  // Ensure PDF exists; generate if missing
-  let pdfUrl = inv.pdf_url;
-  try {
-    if (!pdfUrl) {
-      const pdfRes = await generateInvoicePDF(inv);
-      if (pdfRes && pdfRes.url){
-        await supabase.from('invoices').update({ pdf_url: pdfRes.url, storage_path: pdfRes.path }).eq('id', inv.id);
-        pdfUrl = pdfRes.url;
-        inv.pdf_url = pdfUrl;
-      }
-    }
-  } catch (err){
-    console.warn('Gagal generate PDF sebelum kirim WA:', err);
-  }
-
-  let message = buildInvoiceMessage(inv);
-  if (pdfUrl) message += '\n\nInvoice PDF: ' + pdfUrl;
+  const message = buildInvoiceMessage(inv);
   const msg = encodeURIComponent(message);
   window.open(`https://wa.me/${phoneClean}?text=${msg}`, '_blank');
 }
