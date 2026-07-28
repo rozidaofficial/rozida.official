@@ -655,43 +655,8 @@ const supabase = window.supabase.createClient(normalizeSupabaseUrl(SUPABASE_URL)
 
 let allOrders = [];
 let currentOrderId = null;
-const STORAGE_KEY_ORDERS = 'rozida.orders';
-const STORAGE_KEY_GALLERY = 'rozida.gallery';
-const STORAGE_KEY_SETTINGS = 'rozida.settings';
 const SYNC_CHANNEL = 'rozida-sync';
 let syncChannel = window.BroadcastChannel ? new BroadcastChannel(SYNC_CHANNEL) : null;
-
-function getLocalOrders() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_ORDERS) || '[]');
-  } catch (err) {
-    return [];
-  }
-}
-
-function getLocalGallery() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
-  } catch (err) {
-    return [];
-  }
-}
-
-function getLocalSettings() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS) || '{}');
-  } catch (err) {
-    return {};
-  }
-}
-
-function saveLocalSettings(settingsObj) {
-  try {
-    localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settingsObj));
-  } catch (err) {
-    console.warn('Gagal menyimpan pengaturan ke localStorage:', err);
-  }
-}
 
 function notifySync(type) {
   if (syncChannel) syncChannel.postMessage({ type });
@@ -704,12 +669,6 @@ if (syncChannel) {
     if (event.data?.type === 'settings-updated') populateSettingsForm();
   };
 }
-
-window.addEventListener('storage', (event) => {
-  if (event.key === STORAGE_KEY_ORDERS) loadOrders();
-  if (event.key === STORAGE_KEY_GALLERY) loadGalleryAdmin();
-  if (event.key === STORAGE_KEY_SETTINGS) populateSettingsForm();
-});
 
 /* ---------- AUTH ---------- */
 const loginScreen = document.getElementById('loginScreen');
@@ -819,14 +778,6 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 
 /* ---------- LOAD ORDERS ---------- */
 async function loadOrders(){
-  const localOrders = getLocalOrders();
-  if (localOrders.length) {
-    allOrders = localOrders.slice().sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
-    renderStats();
-    renderTable();
-    populateOrderPicker();
-  }
-
   let remoteData = [];
   let error = null;
 
@@ -842,11 +793,11 @@ async function loadOrders(){
   }
 
   if (error) {
-    console.warn('Gagal memuat order dari Supabase, memakai data lokal:', error);
+    console.error('Gagal memuat order dari Supabase:', error);
+    allOrders = [];
+  } else {
+    allOrders = (remoteData || []).sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
   }
-
-  const merged = [...remoteData, ...localOrders.filter(local => !remoteData.some(remote => remote.id === local.id))];
-  allOrders = merged.sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
 
   renderStats();
   renderTable();
@@ -1122,24 +1073,22 @@ function renderPaymentAccountsForm() {
 }
 
 async function loadSettingsMap(){
-  const fallbackSettings = getLocalSettings();
   try {
     const { data, error } = await supabase.from('settings').select('key,value').in('key', SETTINGS_KEYS);
     if (!error && data) {
       settingsMap = {};
       (data || []).forEach(d => settingsMap[d.key] = d.value);
-      saveLocalSettings(settingsMap);
       renderInvoiceBankAccountOptions();
       return settingsMap;
     }
     if (error) {
-      console.warn('Gagal memuat pengaturan dari Supabase, memakai data lokal:', error);
+      console.error('Gagal memuat pengaturan dari Supabase:', error);
     }
   } catch (err) {
-    console.warn('Gagal memuat pengaturan dari Supabase, memakai data lokal:', err);
+    console.error('Gagal memuat pengaturan dari Supabase:', err);
   }
 
-  settingsMap = fallbackSettings;
+  settingsMap = {};
   renderInvoiceBankAccountOptions();
   return settingsMap;
 }
@@ -1251,7 +1200,6 @@ document.getElementById('saveSettingsBtn').addEventListener('click', async () =>
   btn.disabled = false; btn.textContent = 'Simpan Pengaturan';
 
   settingsMap = { ...settingsMap, ...settingsPayload };
-  saveLocalSettings(settingsMap);
   notifySync('settings-updated');
   document.getElementById('settingsWaNumber').value = normalized;
   await loadSettingsMap();
@@ -1449,12 +1397,9 @@ function renderAgendaList(){
 async function loadAgendaAdmin(){
   const list = document.getElementById('agendaAdminList');
   try {
-    const localOrders = getLocalOrders();
-    let remoteData = [];
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (!error) remoteData = data || [];
-    const merged = [...remoteData, ...localOrders.filter(local => !remoteData.some(remote => remote.id === local.id))];
-    const orderEvents = (merged || [])
+    if (error) throw error;
+    const orderEvents = (data || [])
       .filter(order => order.event_date)
       .map(order => ({
         id: `order-${order.id}`,
@@ -1572,16 +1517,6 @@ const galleryFormMsg = document.getElementById('galleryFormMsg');
 
 async function loadGalleryAdmin(){
   const grid = document.getElementById('galleryAdminGrid');
-  const localGallery = getLocalGallery();
-  if (localGallery.length) {
-    grid.innerHTML = localGallery.map(g => `
-      <div class="gallery-admin-item">
-        <img src="${g.image_url}" alt="${escapeHtml(g.caption||'')}">
-        ${g.caption ? `<div class="gcap">${escapeHtml(g.caption)}</div>` : ''}
-        <button class="gdel" data-id="${g.id}" data-path="${g.storage_path||''}" title="Hapus">✕</button>
-      </div>
-    `).join('');
-  }
 
   let remoteData = [];
   let error = null;
@@ -1595,16 +1530,18 @@ async function loadGalleryAdmin(){
   }
 
   if (error) {
-    console.warn('Gagal memuat gallery dari Supabase, memakai data lokal:', error);
+    console.error('Gagal memuat gallery dari Supabase:', error);
+    grid.innerHTML = '<p class="empty-state">Gagal memuat gallery.</p>';
+    return;
   }
 
-  const merged = [...remoteData, ...localGallery.filter(local => !remoteData.some(remote => remote.id === local.id))];
+  const list = (remoteData || []).sort((a, b) => new Date(b.created_at || b.updated_at || 0) - new Date(a.created_at || a.updated_at || 0));
 
-  if (!merged.length){
+  if (!list.length){
     grid.innerHTML = '<p class="empty-state">Belum ada foto.</p>';
     return;
   }
-  grid.innerHTML = merged.map(g => `
+  grid.innerHTML = list.map(g => `
     <div class="gallery-admin-item">
       <img src="${g.image_url}" alt="${escapeHtml(g.caption||'')}">
       ${g.caption ? `<div class="gcap">${escapeHtml(g.caption)}</div>` : ''}
@@ -1668,21 +1605,7 @@ document.getElementById('galleryUploadBtn').addEventListener('click', async () =
       remoteError = err;
     }
 
-    const localItem = {
-      id: `local-${Date.now()}`,
-      image_url: uploadUrl,
-      storage_path: path,
-      caption: caption,
-      created_at: new Date().toISOString()
-    };
-    try {
-      const list = JSON.parse(localStorage.getItem(STORAGE_KEY_GALLERY) || '[]');
-      list.unshift(localItem);
-      localStorage.setItem(STORAGE_KEY_GALLERY, JSON.stringify(list));
-    } catch (err) {
-      console.warn('Gagal menulis gallery lokal', err);
-    }
-    notifySync('gallery-updated');
+notifySync('gallery-updated');
 
     if (remoteError) {
       galleryFormMsg.textContent = 'Foto disimpan lokal dan siap tampil di admin. Sinkronisasi Supabase gagal: ' + (remoteError.message || remoteError);
