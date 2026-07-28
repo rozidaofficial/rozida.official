@@ -868,6 +868,10 @@ async function loadAgenda(){
     const ordEvents = ord.map(o => ({ id: `order-${o.id}`, event_date: o.event_date, title: o.service_type || 'Pesanan', note: o.notes || o.address || o.package_detail || '' }));
     agendaItems = ag.concat(ordEvents.map(e => ({ id: e.id, event_date: e.event_date, title: e.title, note: e.note })));
     allAgenda = ag.concat(ordEvents);
+    // sort by date
+    allAgenda.sort((x,y) => String(x.event_date || '').localeCompare(String(y.event_date || '')));
+    // default selected date -> first event in current month if not set
+    if (!selectedAgendaDate && allAgenda.length) selectedAgendaDate = allAgenda[0].event_date || null;
     agendaDates = new Set(agendaItems.map(a => a.event_date));
     renderCalendar();
     renderAgendaList();
