@@ -96,16 +96,22 @@
   .summary-card{background:linear-gradient(135deg,#f9fbff 0%,#eef4ff 100%);border:1px solid #e4ecfb;border-radius:12px;padding:14px 16px;}
   .summary-card .value{font-size:1.2rem;font-weight:700;color:var(--ink);} 
   .summary-card .label{font-size:.74rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);margin-top:3px;}
-  .agenda-calendar{background:#f9fbff;border:1px solid #e4ecfb;border-radius:12px;padding:14px;}
+  .agenda-calendar{background:#f9fbff;border:1px solid #e4ecfb;border-radius:14px;padding:14px;}
   .cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
   .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;}
   .calendar-grid .dow{font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);text-align:center;padding-bottom:2px;}
-  .calendar-cell{min-height:78px;border:1px solid #e5ebf7;border-radius:10px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative;}
-  .calendar-cell.muted{opacity:.45;}
+  .calendar-cell{min-height:78px;border:1px solid #e5ebf7;border-radius:10px;background:#fff;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative;cursor:pointer;transition:transform .15s, border-color .15s, box-shadow .15s;}
+  .calendar-cell:hover{transform:translateY(-1px);border-color:#5f7fd8;box-shadow:0 6px 14px -10px rgba(52,87,164,.28);}
+  .calendar-cell.muted{opacity:.45;cursor:default;}
   .calendar-cell.today{border-color:#5f7fd8;box-shadow:inset 0 0 0 1px #5f7fd8;}
+  .calendar-cell.is-selected{border-color:#b8894a;background:linear-gradient(135deg,#fff9eb 0%,#fff4d8 100%);}
+  .calendar-cell.has-events{background:linear-gradient(135deg,#ffffff 0%,#f5f8ff 100%);}
   .calendar-cell .day-number{font-size:.78rem;font-weight:600;color:var(--ink);} 
   .calendar-cell .event-pill{font-size:.62rem;padding:3px 6px;border-radius:999px;background:#eef5ff;color:#3457a4;display:inline-block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .calendar-list{display:grid;gap:8px;margin-top:12px;}
+  .calendar-list{display:grid;gap:10px;margin-top:12px;}
+  .calendar-summary{padding:12px 14px;border:1px solid #e7edf8;border-radius:12px;background:linear-gradient(135deg,#fffdf8 0%,#f7f8fb 100%);}
+  .calendar-summary .title{font-weight:600;font-size:.95rem;color:var(--ink);} 
+  .calendar-summary .meta{font-size:.78rem;color:var(--ink-soft);margin-top:2px;}
   .calendar-item{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 12px;border:1px solid #e7edf8;border-radius:10px;background:#fff;}
   .calendar-item .title{font-weight:600;font-size:.9rem;}
   .calendar-item .meta{font-size:.78rem;color:var(--ink-soft);margin-top:2px;}
@@ -1242,6 +1248,7 @@ const agendaForm = document.getElementById('agendaForm');
 const agendaFormMsg = document.getElementById('agendaFormMsg');
 let allAgenda = [];
 let agendaViewDate = new Date();
+let selectedAgendaDate = null;
 
 function renderAgendaCalendar(){
   const cal = document.getElementById('agendaCalendar');
@@ -1262,6 +1269,10 @@ function renderAgendaCalendar(){
     const key = item.event_date;
     if (key) dayMap.set(key, (dayMap.get(key) || 0) + 1);
   });
+  if (!selectedAgendaDate) {
+    const todayKey = new Date().toISOString().slice(0, 10);
+    selectedAgendaDate = todayKey;
+  }
 
   const cells = [];
   const dowNames = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
@@ -1277,8 +1288,9 @@ function renderAgendaCalendar(){
     const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
     const count = dayMap.get(value) || 0;
     const eventMarkup = count ? `<span class="event-pill">${count} agenda</span>` : '';
+    const isSelected = selectedAgendaDate === value;
     cells.push(`
-      <div class="calendar-cell ${isToday ? 'today' : ''}">
+      <div class="calendar-cell ${isToday ? 'today' : ''} ${count ? 'has-events' : ''} ${isSelected ? 'is-selected' : ''}" data-date="${value}">
         <div class="day-number">${day}</div>
         ${eventMarkup}
       </div>
@@ -1286,6 +1298,13 @@ function renderAgendaCalendar(){
   }
 
   cal.innerHTML = `<div class="calendar-grid">${cells.join('')}</div>`;
+  cal.querySelectorAll('.calendar-cell[data-date]').forEach(cell => {
+    cell.addEventListener('click', () => {
+      selectedAgendaDate = cell.getAttribute('data-date');
+      renderAgendaCalendar();
+      renderAgendaList();
+    });
+  });
 }
 
 function renderAgendaList(){
@@ -1298,12 +1317,15 @@ function renderAgendaList(){
     return itemDate.startsWith(monthKey);
   });
 
+  const selectedItems = selectedAgendaDate ? filtered.filter(item => item.event_date === selectedAgendaDate) : [];
+  const selectedLabel = selectedAgendaDate ? formatDateOnly(selectedAgendaDate) : 'Pilih tanggal';
+
   if (!filtered.length){
     list.innerHTML = '<p class="empty-state">Belum ada agenda pada bulan ini.</p>';
     return;
   }
 
-  list.innerHTML = filtered.map(a => `
+  const selectedMarkup = selectedItems.length ? selectedItems.map(a => `
     <div class="calendar-item">
       <div>
         <div class="title">${escapeHtml(a.title)}</div>
@@ -1311,7 +1333,28 @@ function renderAgendaList(){
       </div>
       <button class="mini-btn danger" data-id="${a.id}" data-action="del-agenda">Hapus</button>
     </div>
-  `).join('');
+  `).join('') : '<p class="empty-state" style="padding:16px 0;">Tidak ada agenda pada tanggal ini.</p>';
+
+  list.innerHTML = `
+    <div class="calendar-summary">
+      <div class="title">Agenda ${selectedLabel}</div>
+      <div class="meta">${filtered.length} agenda tersimpan di bulan ${agendaViewDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}</div>
+    </div>
+    ${selectedMarkup}
+    <div class="calendar-summary" style="margin-top:10px;">
+      <div class="title">Semua agenda bulan ini</div>
+      <div class="meta">Klik tanggal di kalender untuk melihat rincian per hari</div>
+    </div>
+    ${filtered.map(a => `
+      <div class="calendar-item">
+        <div>
+          <div class="title">${escapeHtml(a.title)}</div>
+          <div class="meta">${formatDateOnly(a.event_date)}${a.note ? ` · ${escapeHtml(a.note)}` : ''}</div>
+        </div>
+        <button class="mini-btn danger" data-id="${a.id}" data-action="del-agenda">Hapus</button>
+      </div>
+    `).join('')}
+  `;
 
   list.querySelectorAll('[data-action="del-agenda"]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -1330,6 +1373,9 @@ async function loadAgendaAdmin(){
     return;
   }
   allAgenda = data || [];
+  if (!selectedAgendaDate && allAgenda.length) {
+    selectedAgendaDate = allAgenda[0].event_date || null;
+  }
   renderAgendaCalendar();
   renderAgendaList();
 }
@@ -1357,8 +1403,9 @@ agendaForm.addEventListener('submit', async (e) => {
   btn.disabled = true; btn.textContent = 'Menyimpan...';
   agendaFormMsg.textContent = '';
 
+  const eventDate = document.getElementById('agendaDate').value;
   const payload = {
-    event_date: document.getElementById('agendaDate').value,
+    event_date: eventDate,
     title: document.getElementById('agendaTitle').value.trim(),
     note: document.getElementById('agendaNote').value.trim()
   };
@@ -1371,6 +1418,8 @@ agendaForm.addEventListener('submit', async (e) => {
     agendaFormMsg.style.color = '#a13232';
     return;
   }
+  selectedAgendaDate = eventDate;
+  agendaViewDate = new Date(`${eventDate}T00:00:00`);
   agendaFormMsg.textContent = 'Agenda berhasil ditambahkan.';
   agendaFormMsg.style.color = '#2f7a4f';
   agendaForm.reset();
@@ -1771,33 +1820,76 @@ invoiceForm.addEventListener('submit', async (e) => {
 
 // generate PDF from invoice data, upload to storage, return public url
 async function generateInvoicePDF(inv){
-  // build a hidden invoice element
+  const paymentDetails = getInvoicePaymentDetails(inv);
   const container = document.createElement('div');
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '0';
-  container.style.width = '800px';
-  container.style.background = '#fff';
-  container.style.color = '#000';
+  container.style.width = '780px';
+  container.style.background = '#ffffff';
+  container.style.color = '#1f2937';
   container.innerHTML = `
-    <div style="padding:28px;font-family:Arial,Helvetica,sans-serif;">
-      <h2 style="margin:0 0 6px;color:#2B241D;">Rozida.Official</h2>
-      <div style="color:#6b6055;margin-bottom:18px;">Invoice: ${inv.id}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;">
-        <tr><td style="padding:6px 0;">Nama</td><td style="padding:6px 0;">${escapeHtml(inv.customer_name)}</td></tr>
-        <tr><td style="padding:6px 0;">WA</td><td style="padding:6px 0;">${escapeHtml(inv.phone)}</td></tr>
-        <tr><td style="padding:6px 0;">Rincian</td><td style="padding:6px 0;">${escapeHtml(inv.description || '')}</td></tr>
-        <tr><td style="padding:6px 0;">Jumlah</td><td style="padding:6px 0;">Rp ${Number(inv.amount||0).toLocaleString('id-ID')}</td></tr>
-        ${getInvoicePaymentDetails(inv).bankAccounts.length ? `<tr><td style="padding:6px 0;">Rekening</td><td style="padding:6px 0;">${escapeHtml(getInvoicePaymentDetails(inv).bankAccounts.join(' | '))}</td></tr>` : ''}
-        ${getInvoicePaymentDetails(inv).qrisUrl ? `<tr><td style="padding:6px 0;">QRIS</td><td style="padding:6px 0;"><img src="${getInvoicePaymentDetails(inv).qrisUrl}" style="max-width:180px;height:auto;display:block;margin-top:6px;" /></td></tr>` : ''}
-        <tr><td style="padding:6px 0;">Status</td><td style="padding:6px 0;">${inv.status}</td></tr>
-      </table>
-      <div style="margin-top:20px;color:#6b6055;">Terima kasih telah memesan di Rozida.Official 🌷</div>
+    <div style="padding:34px 36px;font-family:Inter,Arial,Helvetica,sans-serif;background:#fff;color:#1f2937;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding-bottom:18px;border-bottom:1px solid #e7e7e7;">
+        <div>
+          <div style="font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#b8894a;font-weight:700;">Rozida.Official</div>
+          <h2 style="margin:6px 0 4px;font-size:24px;color:#1f2937;">Invoice Pembayaran</h2>
+          <div style="font-size:13px;color:#6b7280;">Dibuat pada ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:#6b7280;">Invoice No.</div>
+          <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.id || '-')}</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:20px;">
+        <div>
+          <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Pelanggan</div>
+          <div style="font-size:16px;font-weight:700;">${escapeHtml(inv.customer_name || '-')}</div>
+          <div style="font-size:13px;color:#4b5563;margin-top:4px;">${escapeHtml(inv.phone || '-')}</div>
+        </div>
+        <div style="background:#f7f8fb;padding:16px;border-radius:12px;">
+          <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Status</div>
+          <div style="font-size:15px;font-weight:700;color:${inv.status === 'paid' ? '#1f7a54' : '#a13232'};">${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}</div>
+          <div style="font-size:13px;color:#6b7280;margin-top:6px;">Total Pembayaran</div>
+          <div style="font-size:20px;font-weight:700;">Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</div>
+        </div>
+      </div>
+      <div style="margin-top:22px;border:1px solid #ececec;border-radius:12px;overflow:hidden;">
+        <div style="padding:12px 16px;background:#f7f8fb;font-weight:700;font-size:14px;">Rincian Pesanan</div>
+        <div style="padding:16px;">
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e7e7e7;gap:12px;">
+            <span style="color:#6b7280;">Deskripsi</span>
+            <strong style="text-align:right;">${escapeHtml(inv.description || '-')}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #e7e7e7;gap:12px;">
+            <span style="color:#6b7280;">Jumlah</span>
+            <strong>Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</strong>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;gap:12px;">
+            <span style="color:#6b7280;">Metode Pembayaran</span>
+            <strong>${paymentDetails.bankAccounts.length ? 'Transfer Bank / QRIS' : 'Belum ditentukan'}</strong>
+          </div>
+        </div>
+      </div>
+      ${paymentDetails.bankAccounts.length ? `
+      <div style="margin-top:16px;border:1px solid #ececec;border-radius:12px;padding:16px;">
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Rekening</div>
+        <div style="font-size:13px;line-height:1.6;color:#374151;">${escapeHtml(paymentDetails.bankAccounts.join(' | '))}</div>
+      </div>` : ''}
+      ${paymentDetails.qrisUrl ? `
+      <div style="margin-top:16px;border:1px solid #ececec;border-radius:12px;padding:16px;">
+        <div style="font-size:12px;color:#6b7280;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">QRIS</div>
+        <img src="${paymentDetails.qrisUrl}" style="max-width:180px;height:auto;display:block;border-radius:10px;border:1px solid #ececec;" />
+      </div>` : ''}
+      <div style="margin-top:24px;color:#6b7280;font-size:12px;line-height:1.6;">
+        Terima kasih telah mempercayakan pesanan Anda kepada Rozida.Official.<br/>
+        Silakan simpan invoice ini sebagai bukti pembayaran.
+      </div>
     </div>`;
   document.body.appendChild(container);
 
   try {
-    const canvas = await html2canvas(container, { scale: 2 });
+    const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#ffffff' });
     const imgData = canvas.toDataURL('image/png');
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p','pt','a4');
@@ -1806,12 +1898,27 @@ async function generateInvoicePDF(inv){
     pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
     const blob = pdf.output('blob');
     const path = `invoices/${Date.now()}_${inv.id}.pdf`;
-    // upload
     const { error: upErr } = await supabase.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: false });
     if (upErr) throw upErr;
     const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
-    const publicUrl = pub.publicUrl;
-    return { url: publicUrl, path };
+    return { url: pub.publicUrl, path };
+  } catch (err) {
+    const pdf = new jsPDF('p','pt','a4');
+    pdf.setFontSize(14);
+    pdf.text('Rozida.Official', 40, 40);
+    pdf.setFontSize(12);
+    pdf.text('Invoice Pembayaran', 40, 62);
+    pdf.text(`Nama: ${inv.customer_name || '-'}`, 40, 90);
+    pdf.text(`No. WA: ${inv.phone || '-'}`, 40, 108);
+    pdf.text(`Rincian: ${inv.description || '-'}`, 40, 126);
+    pdf.text(`Jumlah: Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}`, 40, 144);
+    pdf.text(`Status: ${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}`, 40, 162);
+    const blob = pdf.output('blob');
+    const path = `invoices/${Date.now()}_${inv.id}.pdf`;
+    const { error: upErr } = await supabase.storage.from('invoices').upload(path, blob, { contentType: 'application/pdf', upsert: false });
+    if (upErr) throw upErr;
+    const { data: pub } = supabase.storage.from('invoices').getPublicUrl(path);
+    return { url: pub.publicUrl, path };
   } finally {
     container.remove();
   }
