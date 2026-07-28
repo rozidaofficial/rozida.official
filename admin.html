@@ -613,8 +613,11 @@ window.__adminScriptLoaded = true;
 const SUPABASE_URL = "https://ttjyeyisquvamzhdzuke.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_fEb55e3v6NZdx-TPkgoA_Q_2d_ixyUB";
 /* ========================================================================= */
+function normalizeSupabaseUrl(url) {
+  return String(url || '').trim().replace(/\/+$/, '').replace(/\/rest\/v1\/?$/, '');
+}
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(normalizeSupabaseUrl(SUPABASE_URL), SUPABASE_ANON_KEY);
 
 let allOrders = [];
 let currentOrderId = null;
@@ -755,6 +758,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         friendly = 'Email belum dikonfirmasi. Verifikasi akun Anda di Supabase Auth terlebih dulu.';
       } else if (error.message?.includes('signups not allowed')) {
         friendly = 'Pendaftaran akun dinonaktifkan di proyek Supabase Anda.';
+      } else if (error.message?.includes('Invalid login credentials') || error.message?.includes('User not found')) {
+        friendly = 'Akun admin belum terdaftar atau kata sandi salah. Buat/cek akun di Supabase Auth lalu coba lagi.';
       } else if (error.message) {
         friendly = 'Gagal login: ' + error.message;
       }
