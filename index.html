@@ -309,7 +309,8 @@
 
 <div class="topbar">
   <div class="wrap">
-    <span>Melayani area Kudus &amp; sekitarnya</span>
+    <!-- replaced static coverage text with admin-configured social links -->
+    <span class="social-inline" id="topbarSocialLeft"></span>
     <div class="topbar-right">
       <a href="#pesan" id="topbarWaText">WhatsApp: 0882-0065-50939</a>
       <span class="social-inline" id="socialInline"></span>
@@ -649,6 +650,7 @@ let ADMIN_WHATSAPP = ADMIN_WHATSAPP_FALLBACK;
 
 function renderSocialLinks(settingsObj) {
   const topbarWrap = document.getElementById('socialInline');
+  const topbarLeft = document.getElementById('topbarSocialLeft');
   const footerWrap = document.getElementById('footerSocial');
   const links = Object.entries(SOCIAL_ICONS)
     .map(([key, icon]) => ({ key, icon, value: settingsObj?.[key] }))
@@ -656,6 +658,7 @@ function renderSocialLinks(settingsObj) {
 
   if (!links.length) return;
   if (topbarWrap) topbarWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${l.icon}</a>`).join('');
+  if (topbarLeft) topbarLeft.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${l.icon}</a>`).join('');
   if (footerWrap) footerWrap.innerHTML = links.map(l => `<a href="${l.value}" target="_blank" rel="noopener">${l.icon}</a>`).join('');
 }
 
