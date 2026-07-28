@@ -976,9 +976,9 @@ function normalizePhone(raw) {
 function isSettingsSyncSchemaError(err) {
   const message = (err?.message || String(err || '')).toLowerCase();
   const isSchemaError = message.includes('record "new"')
-    || message.includes('does not exist')
+    || message.includes('relation "settings" does not exist')
     || (message.includes('column') && message.includes('does not exist'))
-    || message.includes('relation "settings"');
+    || message.includes('does not exist');
 
   if (isSchemaError) {
     console.warn('Settings sync schema error detected:', err);
