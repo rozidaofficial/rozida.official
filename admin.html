@@ -336,24 +336,8 @@
     <!-- ===== TAB KALENDER / AGENDA ===== -->
     <div class="tab-panel" id="tabKalender">
       <div class="panel-card">
-        <h3>Tambah Agenda</h3>
-        <form id="agendaForm" class="inline-form">
-          <div class="field">
-            <label>Tanggal</label>
-            <input type="date" id="agendaDate" required>
-          </div>
-          <div class="field">
-            <label>Judul</label>
-            <input type="text" id="agendaTitle" required placeholder="Contoh: Akad Nikah - Bu Sari">
-          </div>
-          <div class="field" style="grid-column:span 2;">
-            <label>Catatan (opsional)</label>
-            <input type="text" id="agendaNote" placeholder="Lokasi / detail singkat">
-          </div>
-          <div class="field">
-            <button type="submit" class="btn btn-primary" id="agendaSubmitBtn" style="width:100%;">Simpan Agenda</button>
-          </div>
-        </form>
+        <h3>Agenda Otomatis</h3>
+        <p class="meta">Kalender ini mengambil data dari pesanan yang sudah masuk melalui formulir di halaman publik, jadi tidak perlu input manual lagi.</p>
         <div id="agendaFormMsg" style="font-size:.82rem;margin-top:10px;min-height:16px;"></div>
       </div>
       <div class="panel-card">
@@ -1244,7 +1228,6 @@ document.getElementById('changePasswordBtn').addEventListener('click', async () 
 });
 
 /* ================= KALENDER / AGENDA ================= */
-const agendaForm = document.getElementById('agendaForm');
 const agendaFormMsg = document.getElementById('agendaFormMsg');
 let allAgenda = [];
 let agendaViewDate = new Date();
@@ -1366,18 +1349,31 @@ function renderAgendaList(){
 }
 
 async function loadAgendaAdmin(){
-  const { data, error } = await supabase.from('agenda').select('*').order('event_date', { ascending: true });
   const list = document.getElementById('agendaAdminList');
-  if (error){
-    if (list) list.innerHTML = `<p class="empty-state">Gagal memuat: ${escapeHtml(error.message)}</p>`;
-    return;
+  try {
+    const localOrders = getLocalOrders();
+    let remoteData = [];
+    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+    if (!error) remoteData = data || [];
+    const merged = [...remoteData, ...localOrders.filter(local => !remoteData.some(remote => remote.id === local.id))];
+    const orderEvents = (merged || [])
+      .filter(order => order.event_date)
+      .map(order => ({
+        id: `order-${order.id}`,
+        event_date: order.event_date,
+        title: `${order.service_type || 'Pesanan'} — ${order.customer_name || 'Pelanggan'}`,
+        note: order.notes || order.address || order.package_detail || ''
+      }));
+
+    allAgenda = orderEvents;
+    if (!selectedAgendaDate && allAgenda.length) {
+      selectedAgendaDate = allAgenda[0].event_date || null;
+    }
+    renderAgendaCalendar();
+    renderAgendaList();
+  } catch (err) {
+    if (list) list.innerHTML = `<p class="empty-state">Gagal memuat agenda: ${escapeHtml(err.message || err)}</p>`;
   }
-  allAgenda = data || [];
-  if (!selectedAgendaDate && allAgenda.length) {
-    selectedAgendaDate = allAgenda[0].event_date || null;
-  }
-  renderAgendaCalendar();
-  renderAgendaList();
 }
 
 const agendaPrevMonthBtn = document.getElementById('agendaPrevMonth');
@@ -1397,34 +1393,9 @@ if (agendaNextMonthBtn) {
   });
 }
 
-agendaForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById('agendaSubmitBtn');
-  btn.disabled = true; btn.textContent = 'Menyimpan...';
-  agendaFormMsg.textContent = '';
-
-  const eventDate = document.getElementById('agendaDate').value;
-  const payload = {
-    event_date: eventDate,
-    title: document.getElementById('agendaTitle').value.trim(),
-    note: document.getElementById('agendaNote').value.trim()
-  };
-
-  const { error } = await supabase.from('agenda').insert([payload]);
-  btn.disabled = false; btn.textContent = 'Simpan Agenda';
-
-  if (error){
-    agendaFormMsg.textContent = 'Gagal menyimpan: ' + error.message;
-    agendaFormMsg.style.color = '#a13232';
-    return;
-  }
-  selectedAgendaDate = eventDate;
-  agendaViewDate = new Date(`${eventDate}T00:00:00`);
-  agendaFormMsg.textContent = 'Agenda berhasil ditambahkan.';
-  agendaFormMsg.style.color = '#2f7a4f';
-  agendaForm.reset();
-  loadAgendaAdmin();
-});
+// agenda input disabled; events come from orders form data
+agendaFormMsg.textContent = 'Agenda akan otomatis muncul dari data pesanan yang masuk.';
+agendaFormMsg.style.color = '#5b6b7a';
 
 /* ================= TESTIMONI ================= */
 const testiForm = document.getElementById('testiForm');
