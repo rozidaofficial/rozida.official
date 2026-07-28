@@ -4,8 +4,8 @@ const cors = require('cors');
 const { createClient } = require('@supabase/supabase-js');
 const puppeteer = require('puppeteer');
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = "https://ttjyeyisquvamzhdzuke.supabase.co";
+const SUPABASE_SERVICE_ROLE_KEY = "sb_publishable_fEb55e3v6NZdx-TPkgoA_Q_2d_ixyUB";
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY in env');
   process.exit(1);
