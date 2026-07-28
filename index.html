@@ -439,6 +439,37 @@
       <h2>Kata mereka tentang kami</h2>
       <div class="divider"></div>
     </div>
+    <div class="panel-card" style="margin-bottom:18px;">
+      <h3>Kirim Testimoni</h3>
+      <form id="testiSubmitForm" style="display:grid;grid-template-columns:1fr 80px;gap:10px;align-items:end;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+          <div>
+            <label style="display:block;font-size:.72rem;color:var(--ink-soft);margin-bottom:6px;">Nama</label>
+            <input type="text" id="testiName" placeholder="Nama Anda" required>
+          </div>
+          <div>
+            <label style="display:block;font-size:.72rem;color:var(--ink-soft);margin-bottom:6px;">Rating</label>
+            <select id="testiRating">
+              <option value="5">★★★★★ (5)</option>
+              <option value="4">★★★★☆ (4)</option>
+              <option value="3">★★★☆☆ (3)</option>
+              <option value="2">★★☆☆☆ (2)</option>
+              <option value="1">★☆☆☆☆ (1)</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr;gap:8px;">
+          <div>
+            <label style="display:block;font-size:.72rem;color:var(--ink-soft);margin-bottom:6px;">Testimoni</label>
+            <input type="text" id="testiMessage" placeholder="Tulis singkat pengalaman Anda..." required>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button type="submit" class="btn btn-primary" id="testiSubmitBtn">Kirim</button>
+            <div id="testiSubmitMsg" style="font-size:.86rem;align-self:center;color:var(--ink-soft);"></div>
+          </div>
+        </div>
+      </form>
+    </div>
     <div class="testi-grid" id="testiGrid">
       <p class="empty-mini">Memuat testimoni...</p>
     </div>
@@ -879,6 +910,33 @@ async function loadTestimonials(){
   `).join('');
 }
 loadTestimonials();
+
+// customer testimonial submission (published=false; admin must approve)
+document.getElementById('testiSubmitForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('testiSubmitBtn');
+  const msg = document.getElementById('testiSubmitMsg');
+  btn.disabled = true; btn.textContent = 'Mengirim...'; msg.textContent = '';
+  const payload = {
+    customer_name: document.getElementById('testiName').value.trim(),
+    message: document.getElementById('testiMessage').value.trim(),
+    rating: Number(document.getElementById('testiRating').value || 5),
+    published: false
+  };
+  try {
+    const { error } = await supabase.from('testimonials').insert([payload]);
+    if (error) throw error;
+    msg.textContent = 'Terima kasih! Testimoni Anda dikirim dan menunggu persetujuan.';
+    msg.style.color = '#2f7a4f';
+    document.getElementById('testiSubmitForm').reset();
+  } catch (err) {
+    console.error(err);
+    msg.textContent = 'Gagal mengirim testimoni: ' + (err.message || err);
+    msg.style.color = '#a13232';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Kirim';
+  }
+});
 
 /* ================= GALLERY ================= */
 async function loadGallery(){
