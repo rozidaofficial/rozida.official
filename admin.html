@@ -1905,11 +1905,11 @@ function buildInvoiceMessage(inv){
     lines.push('');
     lines.push('Pembayaran dapat dilakukan melalui:');
     const paymentDetails = getInvoicePaymentDetails(inv);
-    if (paymentDetails.qrisUrl) {
-      lines.push(`- QRIS: ${paymentDetails.qrisUrl}`);
-    }
     if (paymentDetails.bankAccounts.length) {
       paymentDetails.bankAccounts.forEach((account) => lines.push(`- Transfer Bank: ${account}`));
+    }
+    if (paymentDetails.qrisUrl) {
+      lines.push('- QRIS telah tercantum di dalam file PDF invoice');
     }
   }
   lines.push('');
