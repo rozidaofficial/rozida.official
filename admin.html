@@ -1705,6 +1705,7 @@ async function loadInvoicesAdmin(){
       <div class="left">
         <strong>${escapeHtml(inv.customer_name)} · Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</strong>
         <p>${escapeHtml(inv.description || '')} · ${escapeHtml(inv.phone)}</p>
+        ${inv.note ? `<p>Catatan: ${escapeHtml(inv.note)}</p>` : ''}
         <p>${(inv.bank_name || inv.bank_account_number || inv.bank_account_holder || settingsMap.payment_bank_name_1 || settingsMap.payment_bank_number_1 || settingsMap.payment_bank_holder_1 || settingsMap.payment_bank_name_2 || settingsMap.payment_bank_number_2 || settingsMap.payment_bank_holder_2) ? `Rekening: ${escapeHtml(getInvoicePaymentDetails(inv).bankAccounts.join(' | '))}` : 'Rekening belum diisi'}</p>
         <p>${inv.qris_image_url ? 'QRIS: tersedia' : 'QRIS: tidak ada'}</p>
       </div>
@@ -1923,6 +1924,7 @@ function openInvoicePrintView(inv){
         <div class="card" style="margin-top:16px;">
           <div class="meta" style="margin-bottom:6px;">Rincian Pesanan</div>
           <div class="row"><span class="label">Deskripsi</span><span class="value">${escapeHtml(inv.description || '-')}</span></div>
+          ${inv.note ? `<div class="row"><span class="label">Catatan</span><span class="value">${escapeHtml(inv.note)}</span></div>` : ''}
           <div class="row"><span class="label">Jumlah</span><span class="value">Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}</span></div>
           <div class="row"><span class="label">Metode Pembayaran</span><span class="value">${paymentDetails.bankAccounts.length ? 'Transfer Bank' : 'Belum ditentukan'}</span></div>
         </div>
@@ -1953,6 +1955,7 @@ function buildInvoiceMessage(inv){
   const lines = [];
   lines.push(`Halo ${inv.customer_name}, berikut invoice pesanan Anda:`);
   if (inv.description) lines.push(`Rincian: ${inv.description}`);
+  if (inv.note) lines.push(`Catatan: ${inv.note}`);
   lines.push(`Total: Rp ${Number(inv.amount || 0).toLocaleString('id-ID')}`);
   lines.push(`Status: ${inv.status === 'paid' ? 'LUNAS' : 'BELUM LUNAS'}`);
   if (inv.status !== 'paid'){
