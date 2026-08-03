@@ -410,6 +410,8 @@
   .lightbox.show{display:flex;}
   .lightbox img{max-width:min(90vw,700px);max-height:85vh;border-radius:10px;}
   .lightbox-close{position:absolute;top:20px;right:26px;color:#fff;font-size:1.8rem;background:none;border:none;cursor:pointer;}
+.wa-btn.pulse{animation:waPulse 1.1s ease-in-out infinite}
+@keyframes waPulse{0%,100%{box-shadow:0 0 0 0 rgba(37,211,102,.5)}50%{box-shadow:0 0 0 10px rgba(37,211,102,0)}}
 </style>
 </head>
 <body>
@@ -702,6 +704,7 @@
           </div>
           <h3>Pesanan Terkirim!</h3>
           <p>Terima kasih, pesanan Anda sudah kami terima. Anda akan diarahkan otomatis ke WhatsApp admin. Jika tidak terbuka, tekan tombol di bawah ini.</p>
+          <p id="waAutoHint" style="display:none; color:#b45309; font-weight:600; margin:8px 0;"></p>
           <a href="#" id="waConfirmBtn" class="wa-btn" target="_blank">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.1-1.3A10 10 0 1 0 12 2Zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20Zm4.4-5.9c-.2-.1-1.4-.7-1.6-.8-.2-.1-.4-.1-.6.1-.2.2-.6.8-.8 1-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5.1-.1.2-.3.4-.4.1-.1.2-.2.2-.4.1-.2 0-.3 0-.4-.1-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.4.1-.6.3-.2.2-.8.8-.8 1.9s.8 2.2 1 2.4c.1.1 1.6 2.5 4 3.5.6.2 1 .4 1.3.5.6.2 1.1.2 1.5.1.5-.1 1.4-.6 1.6-1.1.2-.5.2-1 .1-1.1-.1-.1-.2-.2-.4-.3Z"/></svg>
             Konfirmasi via WhatsApp
@@ -953,13 +956,26 @@ form.addEventListener('submit', async (e) => {
     `Mohon konfirmasi ya, terima kasih.`
   );
   const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${waText}`;
-  document.getElementById('waConfirmBtn').href = waUrl;
+  const waConfirmBtn = document.getElementById('waConfirmBtn');
+  waConfirmBtn.href = waUrl;
 
   document.getElementById('formArea').style.display = 'none';
   document.getElementById('successArea').style.display = 'block';
 
-  // otomatis buka WhatsApp dengan pesan yang sudah terisi
-  window.location.href = waUrl;
+  // Buka WhatsApp otomatis di tab/aplikasi baru, supaya halaman "Pesanan Terkirim"
+  // di web tetap terlihat (tidak tergantikan) dan tombol fallback tetap ada
+  // kalau browser memblokir pembukaan otomatis.
+  const waWindow = window.open(waUrl, '_blank');
+
+  const waHint = document.getElementById('waAutoHint');
+  if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
+    // Browser memblokir popup otomatis -> beri tahu pengguna untuk klik manual
+    if (waHint) {
+      waHint.textContent = 'WhatsApp tidak terbuka otomatis (diblokir browser). Silakan tekan tombol di bawah ini untuk melanjutkan.';
+      waHint.style.display = 'block';
+    }
+    waConfirmBtn.classList.add('pulse');
+  }
 });
 
 if (syncChannel) {
