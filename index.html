@@ -920,6 +920,31 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  const waText = encodeURIComponent(
+    `Halo Rozida.Official, saya baru saja mengirim pesanan:\n` +
+    `Nama: ${payload.customer_name}\n` +
+    `Layanan: ${payload.service_type}\n` +
+    `Tanggal acara: ${payload.event_date || '-'}\n` +
+    `Mohon konfirmasi ya, terima kasih.`
+  );
+  const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${waText}`;
+  const waConfirmBtn = document.getElementById('waConfirmBtn');
+  const waHint = document.getElementById('waAutoHint');
+  waConfirmBtn.href = waUrl;
+
+  // PENTING: window.open() harus dipanggil SEBELUM proses await (kirim ke Supabase),
+  // langsung sebagai kelanjutan dari klik pengguna. Kalau dipanggil sesudah await,
+  // browser (terutama di HP) diam-diam memblokirnya karena dianggap bukan lagi
+  // respons langsung dari aksi pengguna.
+  const waWindow = window.open(waUrl, '_blank');
+  if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
+    if (waHint) {
+      waHint.textContent = 'WhatsApp tidak terbuka otomatis (diblokir browser). Silakan tekan tombol di bawah ini untuk melanjutkan.';
+      waHint.style.display = 'block';
+    }
+    waConfirmBtn.classList.add('pulse');
+  }
+
   submitBtn.disabled = true;
   submitBtn.innerHTML = '<span class="loader"></span> Mengirim...';
 
@@ -948,34 +973,8 @@ form.addEventListener('submit', async (e) => {
     formMsg.classList.add('success');
   }
 
-  const waText = encodeURIComponent(
-    `Halo Rozida.Official, saya baru saja mengirim pesanan:\n` +
-    `Nama: ${payload.customer_name}\n` +
-    `Layanan: ${payload.service_type}\n` +
-    `Tanggal acara: ${payload.event_date || '-'}\n` +
-    `Mohon konfirmasi ya, terima kasih.`
-  );
-  const waUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${waText}`;
-  const waConfirmBtn = document.getElementById('waConfirmBtn');
-  waConfirmBtn.href = waUrl;
-
-  document.getElementById('formArea').style.display = 'none';
+  form.style.display = 'none';
   document.getElementById('successArea').style.display = 'block';
-
-  // Buka WhatsApp otomatis di tab/aplikasi baru, supaya halaman "Pesanan Terkirim"
-  // di web tetap terlihat (tidak tergantikan) dan tombol fallback tetap ada
-  // kalau browser memblokir pembukaan otomatis.
-  const waWindow = window.open(waUrl, '_blank');
-
-  const waHint = document.getElementById('waAutoHint');
-  if (!waWindow || waWindow.closed || typeof waWindow.closed === 'undefined') {
-    // Browser memblokir popup otomatis -> beri tahu pengguna untuk klik manual
-    if (waHint) {
-      waHint.textContent = 'WhatsApp tidak terbuka otomatis (diblokir browser). Silakan tekan tombol di bawah ini untuk melanjutkan.';
-      waHint.style.display = 'block';
-    }
-    waConfirmBtn.classList.add('pulse');
-  }
 });
 
 if (syncChannel) {
